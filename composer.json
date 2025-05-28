@@ -24,7 +24,7 @@
     "require": {
         "php": "^8.4",
         "filament/filament": "^3.2",
-        "illuminate/contracts": "^12.0",
+        "illuminate/contracts": "^11.0|^12.0",
         "spatie/laravel-data": "^4.0",
         "spatie/laravel-package-tools": "^1.15.0"
     },
@@ -53,7 +53,7 @@
     },
     "scripts": {
         "post-autoload-dump": "@php ./vendor/bin/testbench package:discover --ansi",
-        "analyse": "vendor/bin/phpstan analyse",
+        "analyse": "php -d memory_limit=2G vendor/bin/phpstan analyse",
         "test": "vendor/bin/pest",
         "test-coverage": "vendor/bin/pest --coverage",
         "format": "vendor/bin/pint"

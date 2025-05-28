@@ -1,0 +1,51 @@
+parameters:
+	ignoreErrors:
+		-
+			message: "#^Match expression does not handle remaining value\\: string$#"
+			count: 1
+			path: src/Data/ContentBlockData.php
+
+		-
+			message: "#^Access to an undefined property Threls\\\\FilamentPageBuilder\\\\Models\\\\Page\\:\\:\\$content\\.$#"
+			count: 1
+			path: src/Data/PageData.php
+
+		-
+			message: "#^Access to an undefined property Threls\\\\FilamentPageBuilder\\\\Models\\\\Page\\:\\:\\$slug\\.$#"
+			count: 1
+			path: src/Data/PageData.php
+
+		-
+			message: "#^Access to an undefined property Threls\\\\FilamentPageBuilder\\\\Models\\\\Page\\:\\:\\$title\\.$#"
+			count: 1
+			path: src/Data/PageData.php
+
+		-
+			message: "#^Method Threls\\\\FilamentPageBuilder\\\\PageBuilderPlugin\\:\\:get\\(\\) should return static\\(Threls\\\\FilamentPageBuilder\\\\PageBuilderPlugin\\) but returns Filament\\\\Contracts\\\\Plugin\\|Filament\\\\FilamentManager\\.$#"
+			count: 1
+			path: src/PageBuilderPlugin.php
+
+		-
+			message: "#^Access to constant Amber on an unknown class Filament\\\\Support\\\\Color\\.$#"
+			count: 2
+			path: src/SkeletonTheme.php
+
+		-
+			message: "#^Access to constant Gray on an unknown class Filament\\\\Support\\\\Color\\.$#"
+			count: 2
+			path: src/SkeletonTheme.php
+
+		-
+			message: "#^Access to constant Green on an unknown class Filament\\\\Support\\\\Color\\.$#"
+			count: 1
+			path: src/SkeletonTheme.php
+
+		-
+			message: "#^Access to constant Rose on an unknown class Filament\\\\Support\\\\Color\\.$#"
+			count: 1
+			path: src/SkeletonTheme.php
+
+		-
+			message: "#^Call to an undefined method Filament\\\\Panel\\:\\:primaryColor\\(\\)\\.$#"
+			count: 1
+			path: src/SkeletonTheme.php

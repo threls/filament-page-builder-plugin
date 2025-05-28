@@ -10,5 +10,7 @@ parameters:
     tmpDir: build/phpstan
     checkOctaneCompatibility: true
     checkModelProperties: true
-    checkMissingIterableValueType: false
+    parallel:
+        processTimeout: 300.0
+        maximumNumberOfProcesses: 1
 
