@@ -9,7 +9,7 @@ class ContentBlockData extends Data
 {
     public function __construct(
         public string $type,
-        public HeroSectionData|ImageGalleryData|HorizontalTickerData|BannerData|RichTextPageData|KeyValueSectionData|MapLocationData|ImageCardData|RelationshipData $data,
+        public HeroSectionData | ImageGalleryData | HorizontalTickerData | BannerData | RichTextPageData | KeyValueSectionData | MapLocationData | ImageCardData | RelationshipData $data,
     ) {}
 
     public static function fromArray(array $content): self
