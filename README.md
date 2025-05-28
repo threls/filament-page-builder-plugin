@@ -1,62 +1,174 @@
-# :package_description
+# Filament Page Builder
 
-[![Latest Version on Packagist](https://img.shields.io/packagist/v/:vendor_slug/:package_slug.svg?style=flat-square)](https://packagist.org/packages/:vendor_slug/:package_slug)
-[![GitHub Tests Action Status](https://img.shields.io/github/actions/workflow/status/:vendor_slug/:package_slug/run-tests.yml?branch=main&label=tests&style=flat-square)](https://github.com/:vendor_slug/:package_slug/actions?query=workflow%3Arun-tests+branch%3Amain)
-[![GitHub Code Style Action Status](https://img.shields.io/github/actions/workflow/status/:vendor_slug/:package_slug/fix-php-code-styling.yml?branch=main&label=code%20style&style=flat-square)](https://github.com/:vendor_slug/:package_slug/actions?query=workflow%3A"Fix+PHP+code+styling"+branch%3Amain)
-[![Total Downloads](https://img.shields.io/packagist/dt/:vendor_slug/:package_slug.svg?style=flat-square)](https://packagist.org/packages/:vendor_slug/:package_slug)
+A flexible page builder plugin for Filament v3 with multiple content blocks, perfect for creating dynamic pages in your Laravel applications.
 
-<!--delete-->
----
-This repo can be used to scaffold a Filament plugin. Follow these steps to get started:
+[![Latest Version on Packagist](https://img.shields.io/packagist/v/threls/filament-page-builder.svg?style=flat-square)](https://packagist.org/packages/threls/filament-page-builder)
+[![Total Downloads](https://img.shields.io/packagist/dt/threls/filament-page-builder.svg?style=flat-square)](https://packagist.org/packages/threls/filament-page-builder)
 
-1. Press the "Use this template" button at the top of this repo to create a new repo with the contents of this skeleton.
-2. Run "php ./configure.php" to run a script that will replace all placeholders throughout all the files.
-3. Make something great!
----
-<!--/delete-->
+## Features
 
-This is where your description should go. Limit it to a paragraph or two. Consider adding a small example.
+- **Multiple Content Blocks**: Hero sections, image galleries, banners, rich text, and more
+- **Drag & Drop Builder**: Visual page building with Filament's Builder component
+- **File Management**: Integrated file uploads with configurable storage disks
+- **Status Management**: Draft, Published, and Archived page states
+- **Relationship Content**: Display related content like testimonials, FAQs, events
+- **Configurable**: Customizable settings and extensible block system
+- **Clean Code**: Well-structured with Data Transfer Objects and proper separation of concerns
 
 ## Installation
 
 You can install the package via composer:
 
 ```bash
-composer require :vendor_slug/:package_slug
+composer require threls/filament-page-builder
 ```
 
 You can publish and run the migrations with:
 
 ```bash
-php artisan vendor:publish --tag=":package_slug-migrations"
+php artisan vendor:publish --tag="filament-page-builder-migrations"
 php artisan migrate
 ```
 
 You can publish the config file with:
 
 ```bash
-php artisan vendor:publish --tag=":package_slug-config"
-```
-
-Optionally, you can publish the views using
-
-```bash
-php artisan vendor:publish --tag=":package_slug-views"
-```
-
-This is the contents of the published config file:
-
-```php
-return [
-];
+php artisan vendor:publish --tag="filament-page-builder-config"
 ```
 
 ## Usage
 
+### Basic Setup
+
+1. Install the plugin in your Filament panel:
+
 ```php
-$variable = new VendorName\Skeleton();
-echo $variable->echoPhrase('Hello, VendorName!');
+use Threls\FilamentPageBuilder\PageBuilderPlugin;
+
+public function panel(Panel $panel): Panel
+{
+    return $panel
+        // ...
+        ->plugins([
+            PageBuilderPlugin::make(),
+        ]);
+}
 ```
+
+### Available Content Blocks
+
+The page builder comes with the following content blocks out of the box:
+
+- **Hero Section**: Large banner with title, subtitle, image, and call-to-action button
+- **Image Gallery**: Collection of images with optional text and button
+- **Image Cards**: Repeatable cards with image, text, and button
+- **Horizontal Ticker**: Rotating content sections with images and descriptions
+- **Banner**: Simple banner with title, text, image, and button
+- **Rich Text**: WYSIWYG text editor content
+- **Key-Value Section**: FAQ-style content with title/description pairs
+- **Map Location**: Geographic location with coordinates and address
+- **Relationship Content**: Display related models (testimonials, FAQs, events)
+
+### Configuration
+
+The package publishes a configuration file where you can customize:
+
+```php
+return [
+    // Default storage disk for uploads
+    'disk' => env('FILAMENT_PAGE_BUILDER_DISK', 'public'),
+    
+    // Navigation settings
+    'navigation_group' => 'Content',
+    'navigation_icon' => 'heroicon-o-rectangle-stack',
+    
+    // Relationship types
+    'relationship_types' => [
+        'testimonial' => 'Testimonials',
+        'faq' => 'FAQs',
+        'event' => 'Events',
+    ],
+    
+    // Custom blocks (extend functionality)
+    'custom_blocks' => [],
+];
+```
+
+### Working with Pages
+
+#### Creating Pages
+
+Pages can be created through the Filament admin interface. Each page has:
+- Title (automatically generates slug)
+- Status (Draft, Published, Archived)
+- Content blocks (built using the visual builder)
+
+#### Retrieving Page Data
+
+You can retrieve and work with page data using the included Data Transfer Objects:
+
+```php
+use Threls\FilamentPageBuilder\Models\Page;
+use Threls\FilamentPageBuilder\Data\PageData;
+
+$page = Page::where('slug', 'home')->first();
+$pageData = PageData::fromModel($page);
+
+// Access structured content
+foreach ($pageData->content as $block) {
+    echo $block->type; // e.g., 'hero-section'
+    // $block->data contains the structured block data
+}
+```
+
+### Extending the Page Builder
+
+#### Adding Custom Blocks
+
+You can add custom blocks by extending the configuration:
+
+```php
+// In your config/filament-page-builder.php
+'custom_blocks' => [
+    'testimonial-carousel' => [
+        'label' => 'Testimonial Carousel',
+        'schema' => [
+            TextInput::make('title')->required(),
+            Repeater::make('testimonials')->schema([
+                TextInput::make('name')->required(),
+                Textarea::make('quote')->required(),
+                FileUpload::make('avatar')->image(),
+            ]),
+        ]
+    ]
+],
+```
+
+#### Customizing Relationship Types
+
+Modify the `relationship_types` configuration to match your application's models:
+
+```php
+'relationship_types' => [
+    'product' => 'Products',
+    'service' => 'Services',
+    'team_member' => 'Team Members',
+],
+```
+
+## Data Structure
+
+The package uses Spatie's Laravel Data for type-safe data handling:
+
+- `PageData`: Main page data structure
+- `ContentBlockData`: Individual content block wrapper
+- Component-specific data classes: `HeroSectionData`, `ImageGalleryData`, etc.
+
+## Requirements
+
+- PHP 8.4 or higher
+- Laravel 12.0 or higher
+- Filament 3.2 or higher
 
 ## Testing
 
@@ -78,7 +190,7 @@ Please review [our security policy](../../security/policy) on how to report secu
 
 ## Credits
 
-- [:author_name](https://github.com/:author_username)
+- [Threls](https://github.com/threls)
 - [All Contributors](../../contributors)
 
 ## License

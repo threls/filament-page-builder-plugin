@@ -1,36 +1,38 @@
 {
-    "name": ":vendor_slug/:package_slug",
-    "description": ":package_description",
+    "name": "threls/filament-page-builder",
+    "description": "A flexible page builder plugin for Filament with multiple content blocks",
     "keywords": [
-        ":vendor_name",
+        "threls",
         "laravel",
-        ":package_slug"
+        "filament",
+        "page-builder",
+        "cms"
     ],
-    "homepage": "https://github.com/:vendor_slug/:package_slug",
+    "homepage": "https://github.com/threls/filament-page-builder",
     "support": {
-        "issues": "https://github.com/:vendor_slug/:package_slug/issues",
-        "source": "https://github.com/:vendor_slug/:package_slug"
+        "issues": "https://github.com/threls/filament-page-builder/issues",
+        "source": "https://github.com/threls/filament-page-builder"
     },
     "license": "MIT",
     "authors": [
         {
-            "name": ":author_name",
-            "email": "author@domain.com",
+            "name": "Threls",
+            "email": "info@threls.com",
             "role": "Developer"
         }
     ],
     "require": {
-        "php": "^8.1",
-        "filament/filament": "^3.0",
-        "filament/forms": "^3.0",
-        "filament/tables": "^3.0",
+        "php": "^8.4",
+        "filament/filament": "^3.2",
+        "illuminate/contracts": "^12.0",
+        "spatie/laravel-data": "^4.0",
         "spatie/laravel-package-tools": "^1.15.0"
     },
     "require-dev": {
         "laravel/pint": "^1.0",
-        "nunomaduro/collision": "^7.9",
-        "nunomaduro/larastan": "^2.0.1",
-        "orchestra/testbench": "^8.0",
+        "nunomaduro/collision": "^7.9|^8.0",
+        "larastan/larastan": "^2.0.1",
+        "orchestra/testbench": "^8.0|^9.0",
         "pestphp/pest": "^2.1",
         "pestphp/pest-plugin-arch": "^2.0",
         "pestphp/pest-plugin-laravel": "^2.0",
@@ -41,13 +43,12 @@
     },
     "autoload": {
         "psr-4": {
-            "VendorName\\Skeleton\\": "src/",
-            "VendorName\\Skeleton\\Database\\Factories\\": "database/factories/"
+            "Threls\\FilamentPageBuilder\\": "src/"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            "VendorName\\Skeleton\\Tests\\": "tests/"
+            "Threls\\FilamentPageBuilder\\Tests\\": "tests/"
         }
     },
     "scripts": {
@@ -67,11 +68,8 @@
     "extra": {
         "laravel": {
             "providers": [
-                "VendorName\\Skeleton\\SkeletonServiceProvider"
-            ],
-            "aliases": {
-                "Skeleton": "VendorName\\Skeleton\\Facades\\Skeleton"
-            }
+                "Threls\\FilamentPageBuilder\\PageBuilderServiceProvider"
+            ]
         }
     },
     "minimum-stability": "dev",
