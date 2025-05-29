@@ -77,20 +77,27 @@ The package publishes a configuration file where you can customize:
 return [
     // Default storage disk for uploads
     'disk' => env('FILAMENT_PAGE_BUILDER_DISK', 'public'),
-    
+
     // Navigation settings
     'navigation_group' => 'Content',
     'navigation_icon' => 'heroicon-o-rectangle-stack',
-    
+
     // Relationship types
     'relationship_types' => [
         'testimonial' => 'Testimonials',
         'faq' => 'FAQs',
         'event' => 'Events',
     ],
-    
+
     // Custom blocks (extend functionality)
     'custom_blocks' => [],
+
+    // API settings
+    'api' => [
+        'enabled' => env('FILAMENT_PAGE_BUILDER_API_ENABLED', true),
+        'prefix' => env('FILAMENT_PAGE_BUILDER_API_PREFIX', 'api'),
+        'middleware' => ['api'],
+    ],
 ];
 ```
 
@@ -119,6 +126,36 @@ foreach ($pageData->content as $block) {
     echo $block->type; // e.g., 'hero-section'
     // $block->data contains the structured block data
 }
+```
+
+#### Using the API
+
+The package includes a built-in API for retrieving page data:
+
+```php
+// Available endpoints:
+// GET /api/pages - Returns all published pages
+// You can filter by slug using query parameters: /api/pages?filter[slug]=home
+
+// Example controller usage in your app:
+Route::get('pages', function() {
+    return Http::get('https://yourdomain.com/api/pages')->json();
+});
+
+Route::get('pages/{slug}', function($slug) {
+    return Http::get("https://yourdomain.com/api/pages?filter[slug]={$slug}")->json();
+});
+```
+
+You can configure the API in the config file:
+
+```php
+// In your config/filament-page-builder.php
+'api' => [
+    'enabled' => env('FILAMENT_PAGE_BUILDER_API_ENABLED', true),
+    'prefix' => env('FILAMENT_PAGE_BUILDER_API_PREFIX', 'api'),
+    'middleware' => ['api'],
+],
 ```
 
 ### Extending the Page Builder
@@ -166,9 +203,10 @@ The package uses Spatie's Laravel Data for type-safe data handling:
 
 ## Requirements
 
-- PHP 8.4 or higher
-- Laravel 12.0 or higher
+- PHP 8.2 or higher (including PHP 8.4)
+- Laravel 10.0 or higher
 - Filament 3.2 or higher
+- Spatie Laravel Query Builder 6.3 or higher (for API functionality)
 
 ## Testing
 

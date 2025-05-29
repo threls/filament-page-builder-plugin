@@ -2,6 +2,7 @@
 
 namespace Threls\FilamentPageBuilder;
 
+use Illuminate\Support\Facades\Route;
 use Spatie\LaravelPackageTools\Package;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
 
@@ -16,6 +17,7 @@ class PageBuilderServiceProvider extends PackageServiceProvider
         $package->name(static::$name)
             ->hasConfigFile()
             ->hasViews()
+            ->hasRoute('api')
             ->hasMigration('2025_01_28_120000_create_pages_table');
     }
 
@@ -27,5 +29,14 @@ class PageBuilderServiceProvider extends PackageServiceProvider
     public function packageBooted(): void
     {
         parent::packageBooted();
+
+        $this->registerRoutes();
+    }
+
+    protected function registerRoutes(): void
+    {
+        if (config('filament-page-builder.api.enabled', true)) {
+            $this->loadRoutesFrom(__DIR__ . '/../routes/api.php');
+        }
     }
 }

@@ -83,4 +83,18 @@ return [
         //     ]
         // ]
     ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | API Settings
+    |--------------------------------------------------------------------------
+    |
+    | Configure the API settings for the page builder.
+    |
+    */
+    'api' => [
+        'enabled' => env('FILAMENT_PAGE_BUILDER_API_ENABLED', true),
+        'prefix' => env('FILAMENT_PAGE_BUILDER_API_PREFIX', 'api'),
+        'middleware' => ['api'],
+    ],
 ];
