@@ -2,7 +2,6 @@
 
 namespace Threls\FilamentPageBuilder;
 
-use Illuminate\Support\Facades\Route;
 use Spatie\LaravelPackageTools\Package;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
 
