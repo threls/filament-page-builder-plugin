@@ -97,4 +97,23 @@ return [
         'prefix' => env('FILAMENT_PAGE_BUILDER_API_PREFIX', 'api'),
         'middleware' => ['api'],
     ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Language Switch Settings
+    |--------------------------------------------------------------------------
+    |
+    | Configure the language switch settings for the page builder.
+    |
+    */
+    'language_switch' => [
+        'enabled' => true,
+        'locales' => [
+            'en' => 'English',
+            'fr' => 'French',
+            'es' => 'Spanish',
+            'de' => 'German',
+        ],
+        'default_locale' => null, // null means use app locale
+    ],
 ];

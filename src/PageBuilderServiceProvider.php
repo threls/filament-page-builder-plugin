@@ -2,6 +2,7 @@
 
 namespace Threls\FilamentPageBuilder;
 
+use BezhanSalleh\FilamentLanguageSwitch\LanguageSwitch;
 use Spatie\LaravelPackageTools\Package;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
 
@@ -30,6 +31,7 @@ class PageBuilderServiceProvider extends PackageServiceProvider
         parent::packageBooted();
 
         $this->registerRoutes();
+        $this->configureLanguageSwitch();
     }
 
     protected function registerRoutes(): void
@@ -37,5 +39,12 @@ class PageBuilderServiceProvider extends PackageServiceProvider
         if (config('filament-page-builder.api.enabled', true)) {
             $this->loadRoutesFrom(__DIR__ . '/../routes/api.php');
         }
+    }
+
+    protected function configureLanguageSwitch(): void
+    {
+        LanguageSwitch::configureUsing(function (LanguageSwitch $switch) {
+            $switch->locales(config('filament-language-switch.locales', ['en' => 'English']));
+        });
     }
 }
