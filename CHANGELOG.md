@@ -2,6 +2,29 @@
 
 All notable changes to `filament-page-builder` will be documented in this file.
 
+## v2.0.0 - 2025-01-28
+
+### Added
+- Full multilingual support with translatable fields (title, slug, content)
+- Media library integration with automatic image processing
+- Responsive image conversions (thumbnail, medium, large sizes)
+- API locale detection via Accept-Language header or query parameter
+- Automatic temporary image processing and cleanup
+- Enhanced data structures with MediaData support for better image handling
+- Translation-friendly admin interface with tabbed forms
+- SetApiLocale middleware for API internationalization
+
+### Changed
+- **BREAKING**: Image fields now return MediaData objects instead of simple string paths
+- **BREAKING**: API responses now include locale information
+- Page model now implements HasMedia interface for better media management
+- Filament forms restructured to support multiple languages with tabs
+
+### Dependencies
+- Added `spatie/laravel-medialibrary: ^11.0` for media management
+- Added `bezhansalleh/filament-language-switch: ^3.1` for language switching
+- Added `spatie/laravel-translatable: ^6.7` for multilingual content
+
 ## v1.0.0 - 2025-01-28
 
 ### Added
