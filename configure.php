@@ -153,7 +153,6 @@ foreach ($files as $file) {
 
 if (! $useDependabot) {
     safeUnlink(__DIR__ . '/.github/dependabot.yml');
-    safeUnlink(__DIR__ . '/.github/workflows/dependabot-auto-merge.yml');
 }
 
 if (! $useLaravelRay) {
@@ -163,7 +162,7 @@ if (! $useLaravelRay) {
 if (! $usePhpStan) {
     safeUnlink(__DIR__ . '/phpstan.neon.dist');
     safeUnlink(__DIR__ . '/phpstan-baseline.neon');
-    safeUnlink(__DIR__ . '/.github/workflows/phpstan.yml');
+
 
     removeComposerDeps([
         'phpstan/extension-installer',
@@ -176,7 +175,6 @@ if (! $usePhpStan) {
 }
 
 if (! $usePint) {
-    safeUnlink(__DIR__ . '/.github/workflows/fix-php-code-style-issues.yml');
     safeUnlink(__DIR__ . '/pint.json');
 
     removeComposerDeps([

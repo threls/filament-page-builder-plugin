@@ -11,7 +11,7 @@ class BannerData extends Data
 {
     public function __construct(
         public string $text,
-        public string $image,
+        public string|MediaData|null $image,
         public string $title,
         public ?string $buttonText,
         public ?string $buttonPath,
@@ -21,7 +21,7 @@ class BannerData extends Data
     {
         return new self(
             text: $data['text'],
-            image: $data['image'],
+            image: $data['image'] ?? null,
             title: $data['title'],
             buttonText: $data['button-text'] ?? null,
             buttonPath: $data['button-path'] ?? null,

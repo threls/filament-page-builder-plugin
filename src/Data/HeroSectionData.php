@@ -10,11 +10,12 @@ use Spatie\LaravelData\Mappers\SnakeCaseMapper;
 class HeroSectionData extends Data
 {
     public function __construct(
-        public string $image,
+        public string | MediaData $image,
         public string $title,
         public ?string $subtitle,
         public ?string $buttonText,
         public ?string $buttonPath,
+        public string | MediaData | null $sticker = null,
     ) {}
 
     public static function fromArray(array $data): self
@@ -25,6 +26,7 @@ class HeroSectionData extends Data
             subtitle: $data['subtitle'] ?? null,
             buttonText: $data['button-text'] ?? null,
             buttonPath: $data['button-path'] ?? null,
+            sticker: $data['sticker'] ?? null,
         );
     }
 }

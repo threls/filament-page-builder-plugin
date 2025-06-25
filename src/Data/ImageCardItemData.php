@@ -11,7 +11,7 @@ class ImageCardItemData extends Data
 {
     public function __construct(
         public ?string $text,
-        public string $image,
+        public string | MediaData $image,
         public ?string $buttonText,
         public ?string $buttonPath,
     ) {}

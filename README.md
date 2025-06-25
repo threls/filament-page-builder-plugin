@@ -12,6 +12,7 @@ A flexible page builder plugin for Filament v3 with multiple content blocks, per
 - **File Management**: Integrated file uploads with configurable storage disks
 - **Status Management**: Draft, Published, and Archived page states
 - **Relationship Content**: Display related content like testimonials, FAQs, events
+- **Multi-language Support**: Built-in language switching capability
 - **Configurable**: Customizable settings and extensible block system
 - **Clean Code**: Well-structured with Data Transfer Objects and proper separation of concerns
 
@@ -156,6 +157,30 @@ You can configure the API in the config file:
     'prefix' => env('FILAMENT_PAGE_BUILDER_API_PREFIX', 'api'),
     'middleware' => ['api'],
 ],
+
+// Language Switch Settings
+'language_switch' => [
+    'enabled' => true,
+    'locales' => [
+        'en' => 'English',
+        // Add more languages as needed
+    ],
+    'default_locale' => 'en',
+],
+```
+
+### Multi-language Support
+
+The package includes built-in language switching capabilities powered by the FilamentLanguageSwitch plugin:
+
+```php
+// The language switch is automatically configured
+// Users can switch between available languages in the Filament panel
+
+// You can publish the language switch configuration
+php artisan vendor:publish --tag="filament-language-switch-config"
+
+// Add new language translations by creating files in the resources/lang/{locale} directory
 ```
 
 ### Extending the Page Builder

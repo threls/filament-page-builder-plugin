@@ -9,7 +9,7 @@ class TickerGroupItemData extends Data
     public function __construct(
         public ?string $title,
         public ?string $description,
-        /** @var string[] */
+        /** @var array<string|MediaData>|null */
         public ?array $images,
     ) {}
 
