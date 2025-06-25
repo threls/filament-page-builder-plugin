@@ -19,8 +19,12 @@ class PageController extends Controller
             ])
             ->whereStatus(PageStatusEnum::PUBLISHED)
             ->whereDoesntHave('resource')
+            ->with('media')
             ->get();
 
-        return PageData::collect($pages);
+        return [
+            'data' => PageData::collect($pages),
+            'locale' => app()->getLocale(),
+        ];
     }
 }

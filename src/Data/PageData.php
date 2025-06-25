@@ -21,11 +21,16 @@ class PageData extends Data
 
     public static function fromModel(Page $page): self
     {
+        $locale = app()->getLocale();
+
+        $contentWithMedia = $page->content_with_media;
+        $localeContent = $contentWithMedia[$locale] ?? ($page->content ?? []);
+
         return new self(
             id: $page->id,
             title: $page->title,
             slug: $page->slug,
-            content: ContentBlockData::collect($page->content),
+            content: ContentBlockData::collect($localeContent),
         );
     }
 }

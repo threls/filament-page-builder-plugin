@@ -162,7 +162,7 @@ if (! $useLaravelRay) {
 if (! $usePhpStan) {
     safeUnlink(__DIR__ . '/phpstan.neon.dist');
     safeUnlink(__DIR__ . '/phpstan-baseline.neon');
-    safeUnlink(__DIR__ . '/.github/workflows/phpstan.yml');
+
 
     removeComposerDeps([
         'phpstan/extension-installer',

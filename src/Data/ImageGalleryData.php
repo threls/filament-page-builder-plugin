@@ -10,8 +10,8 @@ use Spatie\LaravelData\Mappers\SnakeCaseMapper;
 class ImageGalleryData extends Data
 {
     public function __construct(
-        public string $text,
-        /** @var string[] */
+        public ?string $text,
+        /** @var array<string|MediaData> */
         public array $images,
         public ?string $buttonText,
         public ?string $buttonPath,
@@ -20,7 +20,7 @@ class ImageGalleryData extends Data
     public static function fromArray(array $data): self
     {
         return new self(
-            text: $data['text'],
+            text: $data['text'] ?? null,
             images: $data['images'],
             buttonText: $data['button-text'] ?? null,
             buttonPath: $data['button-path'] ?? null,

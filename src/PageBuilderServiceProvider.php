@@ -5,6 +5,8 @@ namespace Threls\FilamentPageBuilder;
 use BezhanSalleh\FilamentLanguageSwitch\LanguageSwitch;
 use Spatie\LaravelPackageTools\Package;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
+use Threls\FilamentPageBuilder\Http\Middleware\SetApiLocale;
+use Threls\FilamentPageBuilder\Services\PageImageProcessor;
 
 class PageBuilderServiceProvider extends PackageServiceProvider
 {
@@ -24,6 +26,10 @@ class PageBuilderServiceProvider extends PackageServiceProvider
     public function packageRegistered(): void
     {
         parent::packageRegistered();
+
+        $this->app['router']->aliasMiddleware('api.locale', SetApiLocale::class);
+
+        $this->app->singleton(PageImageProcessor::class);
     }
 
     public function packageBooted(): void

@@ -1,5 +1,5 @@
 {
-    "name": "threls/filament-page-builder",
+    "name": "threls/filament-page-builder-plugin",
     "description": "A flexible page builder plugin for Filament with multiple content blocks",
     "keywords": [
         "threls",
@@ -27,8 +27,10 @@
         "filament/filament": "^3.2",
         "illuminate/contracts": "^10.0|^11.0|^12.0",
         "spatie/laravel-data": "^4.0",
+        "spatie/laravel-medialibrary": "^11.0",
         "spatie/laravel-package-tools": "^1.15.0",
-        "spatie/laravel-query-builder": "^6.3"
+        "spatie/laravel-query-builder": "^6.3",
+        "spatie/laravel-translatable": "^6.7"
     },
     "require-dev": {
         "laravel/pint": "^1.0",

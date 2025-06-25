@@ -9,6 +9,7 @@ use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Tabs;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Form;
@@ -143,13 +144,30 @@ class PageResource extends Resource
 
     public static function getFormSchema(): array
     {
-        return [
-            TextInput::make('title')
-                ->required()
-                ->live(onBlur: true)
-                ->afterStateUpdated(fn (Set $set, ?string $state) => $set('slug', Str::slug($state))),
+        $locales = config('filament-language-switch.locales', ['en' => 'English']);
 
-            TextInput::make('slug')->readOnly(),
+        return [
+            Tabs::make('Translations')
+                ->tabs(
+                    collect($locales)->map(function ($label, $locale) {
+                        return Tabs\Tab::make($label)
+                            ->schema([
+                                TextInput::make("title.{$locale}")
+                                    ->label('Title')
+                                    ->required($locale === config('app.locale', 'en'))
+                                    ->live(onBlur: true)
+                                    ->afterStateUpdated(function (Set $set, ?string $state) use ($locale) {
+                                        if ($locale === config('app.locale', 'en')) {
+                                            $set("slug.{$locale}", Str::slug($state));
+                                        }
+                                    }),
+
+                                TextInput::make("slug.{$locale}")
+                                    ->label('Slug')
+                                    ->required($locale === config('app.locale', 'en')),
+                            ]);
+                    })->toArray()
+                ),
 
             Select::make('status')
                 ->label('Status')
@@ -160,140 +178,149 @@ class PageResource extends Resource
 
             Section::make('Page builder')
                 ->schema([
-                    Builder::make('content')
-                        ->blocks([
-                            Block::make(PageLayoutTypesEnum::HERO_SECTION->value)
-                                ->schema([
-                                    TextInput::make('title')
-                                        ->required(),
-                                    TextInput::make('subtitle'),
+                    Tabs::make('Content Translations')
+                        ->tabs(
+                            collect($locales)->map(function ($label, $locale) {
+                                return Tabs\Tab::make($label)
+                                    ->schema([
+                                        Builder::make("content.{$locale}")
+                                            ->label('Content')
+                                            ->blocks([
+                                                Block::make(PageLayoutTypesEnum::HERO_SECTION->value)
+                                                    ->schema([
+                                                        TextInput::make('title')
+                                                            ->required(),
+                                                        TextInput::make('subtitle'),
 
-                                    FileUpload::make('image')
-                                        ->panelLayout('grid')
-                                        ->directory('page-builder')
-                                        ->image()
-                                        ->required()
-                                        ->disk(config('filament-page-builder.disk')),
+                                                        FileUpload::make('image')
+                                                            ->panelLayout('grid')
+                                                            ->directory('page-builder')
+                                                            ->image()
+                                                            ->required()
+                                                            ->disk(config('filament-page-builder.disk')),
 
-                                    TextInput::make('button-text'),
-                                    TextInput::make('button-path'),
-                                ])
-                                ->columns(),
+                                                        TextInput::make('button-text'),
+                                                        TextInput::make('button-path'),
+                                                    ])
+                                                    ->columns(),
 
-                            Block::make(PageLayoutTypesEnum::IMAGE_GALLERY->value)
-                                ->schema([
-                                    TextInput::make('text'),
-                                    FileUpload::make('images')
-                                        ->panelLayout('grid')
-                                        ->directory('page-builder')
-                                        ->multiple()
-                                        ->reorderable()
-                                        ->image()
-                                        ->required()
-                                        ->disk(config('filament-page-builder.disk')),
+                                                Block::make(PageLayoutTypesEnum::IMAGE_GALLERY->value)
+                                                    ->schema([
+                                                        TextInput::make('text'),
+                                                        FileUpload::make('images')
+                                                            ->panelLayout('grid')
+                                                            ->directory('page-builder')
+                                                            ->multiple()
+                                                            ->reorderable()
+                                                            ->image()
+                                                            ->required()
+                                                            ->disk(config('filament-page-builder.disk')),
 
-                                    TextInput::make('button-text'),
-                                    TextInput::make('button-path'),
-                                ]),
+                                                        TextInput::make('button-text'),
+                                                        TextInput::make('button-path'),
+                                                    ]),
 
-                            Block::make(PageLayoutTypesEnum::IMAGE_CARDS->value)
-                                ->schema([
-                                    Repeater::make('group')->schema([
-                                        TextInput::make('text'),
-                                        FileUpload::make('image')
-                                            ->directory('page-builder')
-                                            ->panelLayout('grid')
-                                            ->image()
-                                            ->required()
-                                            ->disk(config('filament-page-builder.disk')),
-                                        TextInput::make('button-text'),
-                                        TextInput::make('button-path'),
-                                    ]),
-                                ]),
+                                                Block::make(PageLayoutTypesEnum::IMAGE_CARDS->value)
+                                                    ->schema([
+                                                        Repeater::make('group')->schema([
+                                                            TextInput::make('text'),
+                                                            FileUpload::make('image')
+                                                                ->directory('page-builder')
+                                                                ->panelLayout('grid')
+                                                                ->image()
+                                                                ->required()
+                                                                ->disk(config('filament-page-builder.disk')),
+                                                            TextInput::make('button-text'),
+                                                            TextInput::make('button-path'),
+                                                        ]),
+                                                    ]),
 
-                            Block::make(PageLayoutTypesEnum::HORIZONTAL_TICKER->value)
-                                ->schema([
-                                    TextInput::make('title')->nullable(),
-                                    Repeater::make('group')
-                                        ->schema([
-                                            TextInput::make('title')
-                                                ->required(),
-                                            Textarea::make('description')
-                                                ->nullable(),
+                                                Block::make(PageLayoutTypesEnum::HORIZONTAL_TICKER->value)
+                                                    ->schema([
+                                                        TextInput::make('title')->nullable(),
+                                                        Repeater::make('group')
+                                                            ->schema([
+                                                                TextInput::make('title')
+                                                                    ->required(),
+                                                                Textarea::make('description')
+                                                                    ->nullable(),
 
-                                            FileUpload::make('images')
-                                                ->panelLayout('grid')
-                                                ->directory('page-builder')
-                                                ->multiple()
-                                                ->reorderable()
-                                                ->image()
-                                                ->required()
-                                                ->disk(config('filament-page-builder.disk')),
-                                        ])
-                                        ->columns(),
-                                ]),
+                                                                FileUpload::make('images')
+                                                                    ->panelLayout('grid')
+                                                                    ->directory('page-builder')
+                                                                    ->multiple()
+                                                                    ->reorderable()
+                                                                    ->image()
+                                                                    ->required()
+                                                                    ->disk(config('filament-page-builder.disk')),
+                                                            ])
+                                                            ->columns(),
+                                                    ]),
 
-                            Block::make(PageLayoutTypesEnum::BANNER->value)
-                                ->schema([
-                                    TextInput::make('title')
-                                        ->required(),
-                                    TextInput::make('text')
-                                        ->required(),
-                                    FileUpload::make('image')
-                                        ->panelLayout('grid')
-                                        ->directory('page-builder')
-                                        ->reorderable()
-                                        ->image()
-                                        ->disk(config('filament-page-builder.disk')),
+                                                Block::make(PageLayoutTypesEnum::BANNER->value)
+                                                    ->schema([
+                                                        TextInput::make('title')
+                                                            ->required(),
+                                                        TextInput::make('text')
+                                                            ->required(),
+                                                        FileUpload::make('image')
+                                                            ->panelLayout('grid')
+                                                            ->directory('page-builder')
+                                                            ->reorderable()
+                                                            ->image()
+                                                            ->disk(config('filament-page-builder.disk')),
 
-                                    TextInput::make('button-text'),
-                                    TextInput::make('button-path'),
-                                ]),
+                                                        TextInput::make('button-text'),
+                                                        TextInput::make('button-path'),
+                                                    ]),
 
-                            Block::make(PageLayoutTypesEnum::RICH_TEXT_PAGE->value)
-                                ->schema([
-                                    TextInput::make('title')
-                                        ->required(),
-                                    RichEditor::make('content')
-                                        ->required(),
-                                ]),
+                                                Block::make(PageLayoutTypesEnum::RICH_TEXT_PAGE->value)
+                                                    ->schema([
+                                                        TextInput::make('title')
+                                                            ->required(),
+                                                        RichEditor::make('content')
+                                                            ->required(),
+                                                    ]),
 
-                            Block::make(PageLayoutTypesEnum::KEY_VALUE_SECTION->value)
-                                ->schema([
-                                    Repeater::make('group')
-                                        ->schema([
-                                            TextInput::make('title')
-                                                ->live(onBlur: true)
-                                                ->afterStateUpdated(fn (Set $set, ?string $state) => $set('key', Str::slug($state)))
-                                                ->required(),
-                                            TextInput::make('key')
-                                                ->readOnly(),
-                                            RichEditor::make('description')
-                                                ->required(),
-                                            TextInput::make('hint')
-                                                ->nullable(),
-                                        ])->columns(),
-                                ]),
+                                                Block::make(PageLayoutTypesEnum::KEY_VALUE_SECTION->value)
+                                                    ->schema([
+                                                        Repeater::make('group')
+                                                            ->schema([
+                                                                TextInput::make('title')
+                                                                    ->live(onBlur: true)
+                                                                    ->afterStateUpdated(fn (Set $set, ?string $state) => $set('key', Str::slug($state)))
+                                                                    ->required(),
+                                                                TextInput::make('key')
+                                                                    ->readOnly(),
+                                                                RichEditor::make('description')
+                                                                    ->required(),
+                                                                TextInput::make('hint')
+                                                                    ->nullable(),
+                                                            ])->columns(),
+                                                    ]),
 
-                            Block::make(PageLayoutTypesEnum::MAP_LOCATION->value)
-                                ->schema([
-                                    TextInput::make('title')
-                                        ->required(),
-                                    TextInput::make('latitude')->required(),
-                                    TextInput::make('longitude')->required(),
-                                    TextInput::make('address'),
-                                ]),
+                                                Block::make(PageLayoutTypesEnum::MAP_LOCATION->value)
+                                                    ->schema([
+                                                        TextInput::make('title')
+                                                            ->required(),
+                                                        TextInput::make('latitude')->required(),
+                                                        TextInput::make('longitude')->required(),
+                                                        TextInput::make('address'),
+                                                    ]),
 
-                            Block::make(PageLayoutTypesEnum::RELATIONSHIP_CONTENT->value)
-                                ->schema([
-                                    Select::make('relationship')
-                                        ->options(collect(PageRelationshipTypeEnum::cases())->mapWithKeys(fn ($case) => [
-                                            $case->value => $case->name,
-                                        ]))
-                                        ->required()
-                                        ->searchable(),
-                                ]),
-                        ]),
+                                                Block::make(PageLayoutTypesEnum::RELATIONSHIP_CONTENT->value)
+                                                    ->schema([
+                                                        Select::make('relationship')
+                                                            ->options(collect(PageRelationshipTypeEnum::cases())->mapWithKeys(fn ($case) => [
+                                                                $case->value => $case->name,
+                                                            ]))
+                                                            ->required()
+                                                            ->searchable(),
+                                                    ]),
+                                            ]),
+                                    ]);
+                            })->toArray()
+                        ),
                 ]),
         ];
     }
