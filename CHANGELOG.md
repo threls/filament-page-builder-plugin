@@ -2,13 +2,18 @@
 
 All notable changes to `filament-page-builder` will be documented in this file.
 
+##  Add new page relationship types - 2025-07-01
+
+**Full Changelog**: https://github.com/threls/filament-page-builder-plugin/compare/v2.1.0...v2.1.1
+
 ## v2.1.1 - 2025-01-07
 
 ### Added
+
 - New page relationship types: Facts, Contributions, and Social Links
 - Extended PageRelationshipTypeEnum with FACTS, CONTRIBUTIONS, and SOCIAL_LINKS cases
 
-##  v2.1.0 - Add HasPageBuilder trait - 2025-06-25
+## v2.1.0 - Add HasPageBuilder trait - 2025-06-25
 
 **Full Changelog**: https://github.com/threls/filament-page-builder-plugin/compare/v2.0.0...v2.1.0
 
@@ -43,7 +48,9 @@ All notable changes to `filament-page-builder` will be documented in this file.
 ### Added
 
 - Initial release of Filament Page Builder plugin
+  
 - Multiple content blocks support:
+  
   - Hero Section with title, subtitle, image, and CTA
   - Image Gallery with multiple images and optional button
   - Image Cards with repeatable card items
@@ -55,10 +62,18 @@ All notable changes to `filament-page-builder` will be documented in this file.
   - Relationship Content for displaying related models
   
 - Drag & drop page builder interface using Filament's Builder component
+  
 - File upload management with configurable storage disks
+  
 - Page status management (Draft, Published, Archived)
+  
 - Comprehensive configuration system
+  
 - Type-safe data handling with Spatie Laravel Data
+  
 - Clean, extensible architecture
+  
 - Full Filament v3 integration
+  
 - Comprehensive documentation and examples
+  
