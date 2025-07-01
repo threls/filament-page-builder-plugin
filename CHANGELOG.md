@@ -2,6 +2,12 @@
 
 All notable changes to `filament-page-builder` will be documented in this file.
 
+## v2.1.1 - 2025-01-07
+
+### Added
+- New page relationship types: Facts, Contributions, and Social Links
+- Extended PageRelationshipTypeEnum with FACTS, CONTRIBUTIONS, and SOCIAL_LINKS cases
+
 ## v2.0.0 - 2025-01-28
 
 ### Added
