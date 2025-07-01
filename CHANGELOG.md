@@ -2,6 +2,12 @@
 
 All notable changes to `filament-page-builder` will be documented in this file.
 
+## v2.1.1 - 2025-01-07
+
+### Added
+- New page relationship types: Facts, Contributions, and Social Links
+- Extended PageRelationshipTypeEnum with FACTS, CONTRIBUTIONS, and SOCIAL_LINKS cases
+
 ##  v2.1.0 - Add HasPageBuilder trait - 2025-06-25
 
 **Full Changelog**: https://github.com/threls/filament-page-builder-plugin/compare/v2.0.0...v2.1.0
