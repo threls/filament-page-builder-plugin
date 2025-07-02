@@ -2,28 +2,17 @@
 
 All notable changes to `filament-page-builder` will be documented in this file.
 
-## v2.1.3 - 2025-07-02
+## Add Flysystem - 2025-07-02
 
-### Added
-- Built-in language configuration support via `config('filament-page-builder.languages')`
-- English language works out of the box without config publishing
-
-### Changed
-- **BREAKING**: Moved from `config('filament-language-switch.locales')` to `config('filament-page-builder.languages')`
-- Language configuration is now self-contained within the package
-- Updated all components to use the new config structure
-- Default to English only; publish config to add more languages
-
-### Fixed
-- Language configuration no longer depends on external package config
-- API locale middleware uses correct language configuration
+**Full Changelog**: https://github.com/threls/filament-page-builder-plugin/compare/v2.1.0...v2.1.2
 
 ## v2.1.2 - 2025-07-02
 
 ### Added
+
 - AWS S3 support via `league/flysystem-aws-s3-v3` package for cloud storage capabilities
 
-##  Add new page relationship types - 2025-07-01
+## Add new page relationship types - 2025-07-01
 
 **Full Changelog**: https://github.com/threls/filament-page-builder-plugin/compare/v2.1.0...v2.1.1
 
