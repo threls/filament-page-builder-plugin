@@ -2,6 +2,11 @@
 
 All notable changes to `filament-page-builder` will be documented in this file.
 
+## v2.1.2 - 2025-07-02
+
+### Added
+- AWS S3 support via `league/flysystem-aws-s3-v3` package for cloud storage capabilities
+
 ## v2.1.1 - 2025-01-07
 
 ### Added
