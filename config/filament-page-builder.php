@@ -25,8 +25,7 @@ return [
     | Media Disk
     |--------------------------------------------------------------------------
     |
-    | The disk to use for media library storage. This is used for processed
-    | images with conversions (thumbnail, medium, large).
+    | The disk to use for media library storage.
     |
     */
     'media_disk' => env('FILAMENT_PAGE_BUILDER_MEDIA_DISK', 'public'),
@@ -122,7 +121,7 @@ return [
     'languages' => [
         'en' => 'English',
     ],
-    
+
     /*
     |--------------------------------------------------------------------------
     | Default Language

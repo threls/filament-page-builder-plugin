@@ -10,6 +10,7 @@ use Spatie\LaravelData\Mappers\SnakeCaseMapper;
 class ImageCardData extends Data
 {
     public function __construct(
+        public ?string $title,
         /** @var ImageCardItemData[] */
         public array $group
     ) {}
@@ -17,6 +18,7 @@ class ImageCardData extends Data
     public static function fromArray(array $data): self
     {
         return new self(
+            title: $data['title'] ?? null,
             group: ImageCardItemData::collect($data['group']),
         );
     }

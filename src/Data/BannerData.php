@@ -10,9 +10,10 @@ use Spatie\LaravelData\Mappers\SnakeCaseMapper;
 class BannerData extends Data
 {
     public function __construct(
-        public string $text,
+        public ?string $text,
         public string|MediaData|null $image,
-        public string $title,
+        public ?string $title,
+        public ?string $description,
         public ?string $buttonText,
         public ?string $buttonPath,
     ) {}
@@ -20,9 +21,10 @@ class BannerData extends Data
     public static function fromArray(array $data): self
     {
         return new self(
-            text: $data['text'],
+            text: $data['text'] ?? null,
             image: $data['image'] ?? null,
-            title: $data['title'],
+            title: $data['title'] ?? null,
+            description: $data['description'] ?? null,
             buttonText: $data['button-text'] ?? null,
             buttonPath: $data['button-path'] ?? null,
         );

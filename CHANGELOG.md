@@ -2,6 +2,18 @@
 
 All notable changes to `filament-page-builder` will be documented in this file.
 
+## v2.2.0 - 2025-07-02
+
+### Added
+
+- New PageGridStyleEnum with NORMAL_GRID and STAGGERED_GRID options
+- Enhanced HERO_SECTION block with optional sticker field and nullable image
+- Enhanced IMAGE_CARDS block with optional title field at block level
+- Enhanced BANNER block with optional description field (RichEditor)
+- Enhanced KEY_VALUE_SECTION block with variant selector and image support for each item
+
+**Full Changelog**: https://github.com/threls/filament-page-builder-plugin/compare/v2.1.3...v2.2.0
+
 ## v2.1.3 - 2025-07-02
 
 **Full Changelog**: https://github.com/threls/filament-page-builder-plugin/compare/v2.1.0...v2.1.3

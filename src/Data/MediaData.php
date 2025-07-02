@@ -16,9 +16,6 @@ class MediaData extends Data
         public string $fileName,
         public string $url,
         public string $extension,
-        public ?string $thumbnailUrl = null,
-        public ?string $mediumUrl = null,
-        public ?string $largeUrl = null,
     ) {}
 
     public static function fromMedia(Media $media): self
@@ -29,9 +26,6 @@ class MediaData extends Data
             fileName: $media->file_name,
             url: $media->getUrl(),
             extension: $media->extension ?? pathinfo($media->file_name, PATHINFO_EXTENSION),
-            thumbnailUrl: $media->hasGeneratedConversion('thumbnail') ? $media->getUrl('thumbnail') : null,
-            mediumUrl: $media->hasGeneratedConversion('medium') ? $media->getUrl('medium') : null,
-            largeUrl: $media->hasGeneratedConversion('large') ? $media->getUrl('large') : null,
         );
     }
 

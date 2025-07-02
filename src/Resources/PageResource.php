@@ -29,6 +29,7 @@ use Illuminate\Database\Eloquent\Builder as EloquentBuilder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Support\Str;
 use Threls\FilamentPageBuilder\Enums\PageLayoutTypesEnum;
+use Threls\FilamentPageBuilder\Enums\PageGridStyleEnum;
 use Threls\FilamentPageBuilder\Enums\PageRelationshipTypeEnum;
 use Threls\FilamentPageBuilder\Enums\PageStatusEnum;
 use Threls\FilamentPageBuilder\Models\Page;
@@ -164,7 +165,8 @@ class PageResource extends Resource
 
                                 TextInput::make("slug.{$locale}")
                                     ->label('Slug')
-                                    ->required($locale === config('app.locale', 'en')),
+                                    ->required($locale === config('app.locale', 'en'))
+                                    ->readOnly(),
                             ]);
                     })->toArray()
                 ),
@@ -196,7 +198,14 @@ class PageResource extends Resource
                                                             ->panelLayout('grid')
                                                             ->directory('page-builder')
                                                             ->image()
-                                                            ->required()
+                                                            ->nullable()
+                                                            ->disk(config('filament-page-builder.disk')),
+
+                                                        FileUpload::make('sticker')
+                                                            ->panelLayout('grid')
+                                                            ->directory('page-builder')
+                                                            ->image()
+                                                            ->nullable()
                                                             ->disk(config('filament-page-builder.disk')),
 
                                                         TextInput::make('button-text'),
@@ -222,6 +231,7 @@ class PageResource extends Resource
 
                                                 Block::make(PageLayoutTypesEnum::IMAGE_CARDS->value)
                                                     ->schema([
+                                                        TextInput::make('title')->nullable(),
                                                         Repeater::make('group')->schema([
                                                             TextInput::make('text'),
                                                             FileUpload::make('image')
@@ -260,14 +270,16 @@ class PageResource extends Resource
                                                 Block::make(PageLayoutTypesEnum::BANNER->value)
                                                     ->schema([
                                                         TextInput::make('title')
-                                                            ->required(),
+                                                            ->nullable(),
                                                         TextInput::make('text')
-                                                            ->required(),
+                                                            ->nullable(),
+                                                        RichEditor::make('description')
+                                                            ->nullable(),
                                                         FileUpload::make('image')
                                                             ->panelLayout('grid')
                                                             ->directory('page-builder')
-                                                            ->reorderable()
                                                             ->image()
+                                                            ->required()
                                                             ->disk(config('filament-page-builder.disk')),
 
                                                         TextInput::make('button-text'),
@@ -284,6 +296,13 @@ class PageResource extends Resource
 
                                                 Block::make(PageLayoutTypesEnum::KEY_VALUE_SECTION->value)
                                                     ->schema([
+                                                        Select::make('variant')
+                                                            ->options([
+                                                                PageGridStyleEnum::NORMAL_GRID->value => 'Normal Grid',
+                                                                PageGridStyleEnum::STAGGERED_GRID->value => 'Staggered Grid',
+                                                            ])
+                                                            ->default(PageGridStyleEnum::NORMAL_GRID->value)
+                                                            ->required(),
                                                         Repeater::make('group')
                                                             ->schema([
                                                                 TextInput::make('title')
@@ -296,6 +315,12 @@ class PageResource extends Resource
                                                                     ->required(),
                                                                 TextInput::make('hint')
                                                                     ->nullable(),
+                                                                FileUpload::make('image')
+                                                                    ->panelLayout('grid')
+                                                                    ->directory('page-builder')
+                                                                    ->image()
+                                                                    ->nullable()
+                                                                    ->disk(config('filament-page-builder.disk')),
                                                             ])->columns(),
                                                     ]),
 
