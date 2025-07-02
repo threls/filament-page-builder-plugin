@@ -2,6 +2,10 @@
 
 All notable changes to `filament-page-builder` will be documented in this file.
 
+## v2.1.3 - 2025-07-02
+
+**Full Changelog**: https://github.com/threls/filament-page-builder-plugin/compare/v2.1.0...v2.1.3
+
 ## Add Flysystem - 2025-07-02
 
 **Full Changelog**: https://github.com/threls/filament-page-builder-plugin/compare/v2.1.0...v2.1.2
