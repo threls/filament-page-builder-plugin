@@ -2,6 +2,11 @@
 
 All notable changes to `filament-page-builder` will be documented in this file.
 
+## v2.1.2 - 2025-07-02
+
+### Added
+- AWS S3 support via `league/flysystem-aws-s3-v3` package for cloud storage capabilities
+
 ##  Add new page relationship types - 2025-07-01
 
 **Full Changelog**: https://github.com/threls/filament-page-builder-plugin/compare/v2.1.0...v2.1.1
