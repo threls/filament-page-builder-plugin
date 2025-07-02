@@ -144,7 +144,7 @@ class PageResource extends Resource
 
     public static function getFormSchema(): array
     {
-        $locales = config('filament-language-switch.locales', ['en' => 'English']);
+        $locales = config('filament-page-builder.languages', ['en' => 'English']);
 
         return [
             Tabs::make('Translations')

@@ -81,7 +81,7 @@ class Page extends Model implements HasMedia
         static::saving(function (self $page) {
             if ($page->isDirty('content')) {
                 $imageProcessor = app(PageImageProcessor::class);
-                $locales = config('filament-language-switch.locales', ['en' => 'English']);
+                $locales = config('filament-page-builder.languages', ['en' => 'English']);
 
                 $processedContent = $imageProcessor->processAllLocales(
                     $page->getTranslations('content'),

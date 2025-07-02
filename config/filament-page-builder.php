@@ -111,20 +111,25 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Language Switch Settings
+    | Available Languages
     |--------------------------------------------------------------------------
     |
-    | Configure the language switch settings for the page builder.
+    | Configure available languages for the page builder.
+    | These languages will be used for the Filament language switcher
+    | and for creating translatable content tabs.
     |
     */
-    'language_switch' => [
-        'enabled' => true,
-        'locales' => [
-            'en' => 'English',
-            'fr' => 'French',
-            'es' => 'Spanish',
-            'de' => 'German',
-        ],
-        'default_locale' => null, // null means use app locale
+    'languages' => [
+        'en' => 'English',
     ],
+    
+    /*
+    |--------------------------------------------------------------------------
+    | Default Language
+    |--------------------------------------------------------------------------
+    |
+    | The default language for the page builder.
+    |
+    */
+    'default_language' => 'en',
 ];

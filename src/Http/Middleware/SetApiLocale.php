@@ -14,7 +14,7 @@ class SetApiLocale
             ?? $request->get('locale') 
             ?? config('app.locale', 'en');
         
-        $availableLocales = config('filament-language-switch.locales', ['en']);
+        $availableLocales = array_keys(config('filament-page-builder.languages', ['en' => 'English']));
         
         if (in_array($locale, $availableLocales)) {
             App::setLocale($locale);

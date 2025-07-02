@@ -50,7 +50,7 @@ class PageBuilderServiceProvider extends PackageServiceProvider
     protected function configureLanguageSwitch(): void
     {
         LanguageSwitch::configureUsing(function (LanguageSwitch $switch) {
-            $switch->locales(config('filament-language-switch.locales', ['en' => 'English']));
+            $switch->locales(config('filament-page-builder.languages', ['en' => 'English']));
         });
     }
 }

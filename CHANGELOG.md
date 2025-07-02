@@ -2,6 +2,22 @@
 
 All notable changes to `filament-page-builder` will be documented in this file.
 
+## v2.1.3 - 2025-07-02
+
+### Added
+- Built-in language configuration support via `config('filament-page-builder.languages')`
+- English language works out of the box without config publishing
+
+### Changed
+- **BREAKING**: Moved from `config('filament-language-switch.locales')` to `config('filament-page-builder.languages')`
+- Language configuration is now self-contained within the package
+- Updated all components to use the new config structure
+- Default to English only; publish config to add more languages
+
+### Fixed
+- Language configuration no longer depends on external package config
+- API locale middleware uses correct language configuration
+
 ## v2.1.2 - 2025-07-02
 
 ### Added
