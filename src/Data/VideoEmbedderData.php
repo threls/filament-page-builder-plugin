@@ -22,7 +22,7 @@ class VideoEmbedderData extends Data
     {
         return new self(
             title: $data['title'] ?? null,
-            video: $data['image'] ?? null,
+            video: $data['video'] ?? null,
             externalUrl: $data['external_url'] ?? null,
         );
     }
