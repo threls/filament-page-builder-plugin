@@ -9,8 +9,10 @@ class ContentBlockData extends Data
 {
     public function __construct(
         public string $type,
-        public HeroSectionData | ImageGalleryData | HorizontalTickerData | BannerData | RichTextPageData | KeyValueSectionData | MapLocationData | ImageCardData | RelationshipData $data,
-    ) {}
+        public HeroSectionData|ImageGalleryData|HorizontalTickerData|BannerData|RichTextPageData|KeyValueSectionData|MapLocationData|ImageCardData|RelationshipData|VideoEmbedderData|DividerData $data,
+    )
+    {
+    }
 
     public static function fromArray(array $content): self
     {
@@ -32,6 +34,8 @@ class ContentBlockData extends Data
             PageLayoutTypesEnum::MAP_LOCATION->value => MapLocationData::fromArray($data),
             PageLayoutTypesEnum::IMAGE_CARDS->value => ImageCardData::fromArray($data),
             PageLayoutTypesEnum::RELATIONSHIP_CONTENT->value => RelationshipData::from($data),
+            PageLayoutTypesEnum::VIDEO_EMBEDDER->value => VideoEmbedderData::fromArray($data),
+            PageLayoutTypesEnum::DIVIDER->value => new DividerData()
         };
     }
 }

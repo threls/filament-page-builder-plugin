@@ -275,11 +275,17 @@ class PageResource extends Resource
                                                             ->nullable(),
                                                         RichEditor::make('description')
                                                             ->nullable(),
+                                                        FileUpload::make('background-image')
+                                                            ->panelLayout('grid')
+                                                            ->directory('page-builder')
+                                                            ->image()
+                                                            ->nullable()
+                                                            ->disk(config('filament-page-builder.disk')),
                                                         FileUpload::make('image')
                                                             ->panelLayout('grid')
                                                             ->directory('page-builder')
                                                             ->image()
-                                                            ->required()
+                                                            ->nullable()
                                                             ->disk(config('filament-page-builder.disk')),
 
                                                         TextInput::make('button-text'),
@@ -290,6 +296,12 @@ class PageResource extends Resource
                                                     ->schema([
                                                         TextInput::make('title')
                                                             ->required(),
+                                                        FileUpload::make('image')
+                                                            ->panelLayout('grid')
+                                                            ->directory('page-builder')
+                                                            ->image()
+                                                            ->nullable()
+                                                            ->disk(config('admin.page_builder_disk')),
                                                         RichEditor::make('content')
                                                             ->required(),
                                                     ]),
@@ -341,6 +353,27 @@ class PageResource extends Resource
                                                             ]))
                                                             ->required()
                                                             ->searchable(),
+                                                    ]),
+
+                                                Block::make(PageLayoutTypesEnum::DIVIDER->value)
+                                                    ->schema([
+                                                    ]),
+
+                                                Block::make(PageLayoutTypesEnum::VIDEO_EMBEDDER->value)
+                                                    ->schema([
+                                                        TextInput::make('title')
+                                                            ->nullable(),
+                                                        FileUpload::make('video')
+                                                            ->panelLayout('grid')
+                                                            ->directory('page-builder')
+                                                            ->acceptedFileTypes(['video/mp4', 'video/avi', 'video/mpeg', 'video/quicktime'])
+                                                            ->disk(config('admin.page_builder_disk'))
+                                                            ->maxSize(20048)
+                                                            ->nullable()
+                                                            ->requiredWithout('external_url'),
+                                                        TextInput::make('external_url')
+                                                            ->nullable()
+                                                            ->requiredWithout('video')
                                                     ]),
                                             ]),
                                     ]);

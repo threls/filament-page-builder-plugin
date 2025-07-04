@@ -13,4 +13,6 @@ enum PageLayoutTypesEnum: string
     case MAP_LOCATION = 'map-location';
     case IMAGE_CARDS = 'image-cards';
     case RELATIONSHIP_CONTENT = 'relationship-content';
+    case DIVIDER = 'divider';
+    case VIDEO_EMBEDDER = 'video-embedder';
 }
