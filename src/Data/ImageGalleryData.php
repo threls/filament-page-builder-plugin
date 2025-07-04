@@ -11,7 +11,6 @@ class ImageGalleryData extends Data
 {
     public function __construct(
         public ?string $text,
-        /** @var array<string|MediaData> */
         public array $images,
         public ?string $buttonText,
         public ?string $buttonPath,

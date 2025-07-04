@@ -14,7 +14,7 @@ class KeyValueItemData extends Data
         public string $key,
         public ?string $description,
         public ?string $hint,
-        public string | MediaData | null $image,
+        public ?string $image,
     ) {}
 
     public static function fromArray(array $data): self
