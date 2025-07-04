@@ -159,11 +159,11 @@ class PageResource extends Resource
                                     ->live(onBlur: true)
                                     ->afterStateUpdated(function (Set $set, ?string $state) use ($locale) {
                                         if ($locale === config('app.locale', 'en')) {
-                                            $set("slug.{$locale}", Str::slug($state));
+                                            $set("slug", Str::slug($state));
                                         }
                                     }),
 
-                                TextInput::make("slug.{$locale}")
+                                TextInput::make("slug")
                                     ->label('Slug')
                                     ->required($locale === config('app.locale', 'en'))
                                     ->readOnly(),

@@ -19,7 +19,7 @@ class Page extends Model implements HasMedia
 
     protected $guarded = ['id'];
 
-    public array $translatable = ['title', 'slug', 'content'];
+    public array $translatable = ['title', 'content'];
 
     public function resource(): MorphTo
     {
