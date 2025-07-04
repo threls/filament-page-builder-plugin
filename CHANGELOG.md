@@ -2,6 +2,18 @@
 
 All notable changes to `filament-page-builder` will be documented in this file.
 
+## 2.1.5-beta - 2025-07-04
+
+### What's Changed
+
+* TB-55 add new components by @sabina1997 in https://github.com/threls/filament-page-builder-plugin/pull/3
+
+### New Contributors
+
+* @sabina1997 made their first contribution in https://github.com/threls/filament-page-builder-plugin/pull/3
+
+**Full Changelog**: https://github.com/threls/filament-page-builder-plugin/compare/v2.1.4...2.1.5-beta
+
 ## v2.1.4 - 2025-07-02
 
 **Full Changelog**: https://github.com/threls/filament-page-builder-plugin/compare/v2.1.3...v2.1.4
