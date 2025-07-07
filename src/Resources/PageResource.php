@@ -9,11 +9,11 @@ use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
-use Filament\Forms\Components\Tabs;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Form;
 use Filament\Forms\Set;
+use Filament\Resources\Concerns\Translatable;
 use Filament\Resources\Resource;
 use Filament\Tables\Actions\Action;
 use Filament\Tables\Actions\BulkActionGroup;
@@ -39,6 +39,8 @@ use Threls\FilamentPageBuilder\Resources\PageResource\Pages\ListPages;
 
 class PageResource extends Resource
 {
+    use Translatable;
+
     protected static ?string $model = Page::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
@@ -145,31 +147,16 @@ class PageResource extends Resource
 
     public static function getFormSchema(): array
     {
-        $locales = config('filament-page-builder.languages', ['en' => 'English']);
-
         return [
-            Tabs::make('Translations')
-                ->tabs(
-                    collect($locales)->map(function ($label, $locale) {
-                        return Tabs\Tab::make($label)
-                            ->schema([
-                                TextInput::make("title.{$locale}")
-                                    ->label('Title')
-                                    ->required($locale === config('app.locale', 'en'))
-                                    ->live(onBlur: true)
-                                    ->afterStateUpdated(function (Set $set, ?string $state) use ($locale) {
-                                        if ($locale === config('app.locale', 'en')) {
-                                            $set("slug", Str::slug($state));
-                                        }
-                                    }),
+            TextInput::make('title')
+                ->required()
+                ->maxLength(255)
+                ->live(onBlur: true)
+                ->afterStateUpdated(fn (Set $set, ?string $state) => $set('slug', Str::slug($state))),
 
-                                TextInput::make("slug")
-                                    ->label('Slug')
-                                    ->required($locale === config('app.locale', 'en'))
-                                    ->readOnly(),
-                            ]);
-                    })->toArray()
-                ),
+            TextInput::make('slug')
+                ->required()
+                ->maxLength(255),
 
             Select::make('status')
                 ->label('Status')
@@ -180,14 +167,9 @@ class PageResource extends Resource
 
             Section::make('Page builder')
                 ->schema([
-                    Tabs::make('Content Translations')
-                        ->tabs(
-                            collect($locales)->map(function ($label, $locale) {
-                                return Tabs\Tab::make($label)
-                                    ->schema([
-                                        Builder::make("content.{$locale}")
-                                            ->label('Content')
-                                            ->blocks([
+                    Builder::make('content')
+                        ->label('Content')
+                        ->blocks([
                                                 Block::make(PageLayoutTypesEnum::HERO_SECTION->value)
                                                     ->schema([
                                                         TextInput::make('title')
@@ -374,10 +356,7 @@ class PageResource extends Resource
                                                             ->nullable()
                                                             ->requiredWithout('video')
                                                     ]),
-                                            ]),
-                                    ]);
-                            })->toArray()
-                        ),
+                                        ]),
                 ]),
         ];
     }
