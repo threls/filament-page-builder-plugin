@@ -309,12 +309,11 @@ class PageResource extends Resource
                                                 Block::make(PageLayoutTypesEnum::KEY_VALUE_SECTION->value)
                                                     ->schema([
                                                         Select::make('variant')
-                                                            ->options([
-                                                                PageGridStyleEnum::NORMAL_GRID->value => 'Normal Grid',
-                                                                PageGridStyleEnum::STAGGERED_GRID->value => 'Staggered Grid',
-                                                            ])
+                                                            ->label('Variant')
                                                             ->default(PageGridStyleEnum::NORMAL_GRID->value)
-                                                            ->required(),
+                                                            ->options(collect(PageGridStyleEnum::cases())->mapWithKeys(fn ($case) => [
+                                                                $case->value => $case->name,
+                                                            ]))->required(),
                                                         Repeater::make('group')
                                                             ->schema([
                                                                 TextInput::make('title')
