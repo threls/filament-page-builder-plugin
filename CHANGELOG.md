@@ -2,6 +2,10 @@
 
 All notable changes to `filament-page-builder` will be documented in this file.
 
+## Fix Translations - 2025-07-07
+
+Fix Translations
+
 ## 2.1.9-beta - 2025-07-07
 
 Add grid style
