@@ -2,6 +2,14 @@
 
 All notable changes to `filament-page-builder` will be documented in this file.
 
+## Fix translation - 2025-07-08
+
+### What's Changed
+
+* Fix translation on pagebuilder by @ableta in https://github.com/threls/filament-page-builder-plugin/pull/5
+
+**Full Changelog**: https://github.com/threls/filament-page-builder-plugin/compare/2.2.0-beta...v2.2.2-beta
+
 ## Fix Translations - 2025-07-07
 
 Fix Translations
