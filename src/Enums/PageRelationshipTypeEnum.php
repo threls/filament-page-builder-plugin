@@ -10,4 +10,5 @@ enum PageRelationshipTypeEnum: string
     case FACTS = 'facts';
     case CONTRIBUTIONS = 'contributions';
     case SOCIAL_LINKS = 'social_links';
+    case BLOGS = 'blogs';
 }
