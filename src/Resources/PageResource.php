@@ -291,13 +291,27 @@ class PageResource extends Resource
                                                                 $case->value => $case->name,
                                                             ]))->required(),
                                                         TextInput::make('title')
-                                                            ->required(),
+                                                            ->nullable(),
                                                         FileUpload::make('image')
                                                             ->panelLayout('grid')
                                                             ->directory('page-builder')
                                                             ->image()
                                                             ->required()
                                                             ->disk(config('admin.page_builder_disk')),
+
+                                                        FileUpload::make('sticker')
+                                                            ->panelLayout('grid')
+                                                            ->directory('page-builder')
+                                                            ->image()
+                                                            ->nullable()
+                                                            ->disk(config('filament-page-builder.disk')),
+
+                                                        FileUpload::make('background-image')
+                                                            ->panelLayout('grid')
+                                                            ->directory('page-builder')
+                                                            ->image()
+                                                            ->nullable()
+                                                            ->disk(config('filament-page-builder.disk')),
                                                         RichEditor::make('content')
                                                             ->required(),
                                                     ]),
