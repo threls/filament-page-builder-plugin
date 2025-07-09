@@ -23,7 +23,7 @@ class ImageAndRichTextData extends Data
             title: $data['title'],
             image: $data['image'],
             sticker: $data['sticker'] ?? null,
-            backgroundImage: $data['backgroundImage'] ?? null,
+            backgroundImage: $data['background_image'] ?? null,
             content: $data['content'],
         );
     }
