@@ -296,6 +296,8 @@ class PageResource extends Resource
                                                             ->options(collect(PageGridStyleEnum::cases())->mapWithKeys(fn ($case) => [
                                                                 $case->value => $case->name,
                                                             ]))->required(),
+                                                        TextInput::make('title')
+                                                        ->nullable(),
                                                         Repeater::make('group')
                                                             ->schema([
                                                                 TextInput::make('title')

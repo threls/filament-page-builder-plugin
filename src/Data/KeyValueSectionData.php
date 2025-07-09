@@ -12,6 +12,7 @@ class KeyValueSectionData extends Data
 {
     public function __construct(
         public ?string $variant,
+        public ?string $title,
         /** @var KeyValueItemData[] */
         public array $group,
     ) {}
@@ -20,6 +21,7 @@ class KeyValueSectionData extends Data
     {
         return new self(
             variant: $data['variant'] ?? PageGridStyleEnum::NORMAL_GRID->value,
+            title: $data['title'] ?? null,
             group: KeyValueItemData::collect($data['group']),
         );
     }
