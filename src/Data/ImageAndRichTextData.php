@@ -4,10 +4,11 @@ namespace Threls\FilamentPageBuilder\Data;
 
 use Spatie\LaravelData\Data;
 
-class RichTextPageData extends Data
+class ImageAndRichTextData extends Data
 {
     public function __construct(
         public string $title,
+        public string $image,
         public string $content,
     ) {}
 
@@ -15,6 +16,7 @@ class RichTextPageData extends Data
     {
         return new self(
             title: $data['title'],
+            image: $data['image'],
             content: $data['content'],
         );
     }

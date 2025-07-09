@@ -9,6 +9,7 @@ enum PageLayoutTypesEnum: string
     case HORIZONTAL_TICKER = 'horizontal-ticker';
     case BANNER = 'banner';
     case RICH_TEXT_PAGE = 'rich-text-page';
+    case IMAGE_AND_RICH_TEXT = 'image-and-rich-text';
     case KEY_VALUE_SECTION = 'key-value-section';
     case MAP_LOCATION = 'map-location';
     case IMAGE_CARDS = 'image-cards';

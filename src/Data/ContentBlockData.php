@@ -9,7 +9,9 @@ class ContentBlockData extends Data
 {
     public function __construct(
         public string $type,
-        public HeroSectionData|ImageGalleryData|HorizontalTickerData|BannerData|RichTextPageData|KeyValueSectionData|MapLocationData|ImageCardData|RelationshipData|VideoEmbedderData|DividerData $data,
+        public HeroSectionData|ImageGalleryData|HorizontalTickerData|
+        BannerData|RichTextPageData|KeyValueSectionData|MapLocationData|
+        ImageCardData|RelationshipData|VideoEmbedderData|DividerData|ImageAndRichTextData $data,
     )
     {
     }
@@ -35,7 +37,8 @@ class ContentBlockData extends Data
             PageLayoutTypesEnum::IMAGE_CARDS->value => ImageCardData::fromArray($data),
             PageLayoutTypesEnum::RELATIONSHIP_CONTENT->value => RelationshipData::from($data),
             PageLayoutTypesEnum::VIDEO_EMBEDDER->value => VideoEmbedderData::fromArray($data),
-            PageLayoutTypesEnum::DIVIDER->value => new DividerData()
+            PageLayoutTypesEnum::DIVIDER->value => new DividerData(),
+            PageLayoutTypesEnum::IMAGE_AND_RICH_TEXT->value => ImageAndRichTextData::from($data),
         };
     }
 }

@@ -32,6 +32,7 @@ use Threls\FilamentPageBuilder\Enums\PageLayoutTypesEnum;
 use Threls\FilamentPageBuilder\Enums\PageGridStyleEnum;
 use Threls\FilamentPageBuilder\Enums\PageRelationshipTypeEnum;
 use Threls\FilamentPageBuilder\Enums\PageStatusEnum;
+use Threls\FilamentPageBuilder\Enums\SectionLayoutTypeEnum;
 use Threls\FilamentPageBuilder\Models\Page;
 use Threls\FilamentPageBuilder\Resources\PageResource\Pages\CreatePage;
 use Threls\FilamentPageBuilder\Resources\PageResource\Pages\EditPage;
@@ -278,15 +279,29 @@ class PageResource extends Resource
                                                     ->schema([
                                                         TextInput::make('title')
                                                             ->required(),
+                                                        RichEditor::make('content')
+                                                            ->required(),
+                                                    ]),
+                                                Block::make(PageLayoutTypesEnum::IMAGE_AND_RICH_TEXT->value)
+                                                    ->schema([
+                                                        Select::make('variant')
+                                                            ->label('Variant')
+                                                            ->default(SectionLayoutTypeEnum::IMAGE_LEFT_TEXT_RIGHT->value)
+                                                            ->options(collect(SectionLayoutTypeEnum::cases())->mapWithKeys(fn ($case) => [
+                                                                $case->value => $case->name,
+                                                            ]))->required(),
+                                                        TextInput::make('title')
+                                                            ->required(),
                                                         FileUpload::make('image')
                                                             ->panelLayout('grid')
                                                             ->directory('page-builder')
                                                             ->image()
-                                                            ->nullable()
+                                                            ->required()
                                                             ->disk(config('admin.page_builder_disk')),
                                                         RichEditor::make('content')
                                                             ->required(),
                                                     ]),
+
 
                                                 Block::make(PageLayoutTypesEnum::KEY_VALUE_SECTION->value)
                                                     ->schema([
