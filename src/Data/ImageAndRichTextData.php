@@ -10,7 +10,7 @@ use Spatie\LaravelData\Mappers\SnakeCaseMapper;
 class ImageAndRichTextData extends Data
 {
     public function __construct(
-        public string $title,
+        public ?string $title,
         public string $image,
         public ?string $sticker,
         public ?string $backgroundImage,
@@ -20,7 +20,7 @@ class ImageAndRichTextData extends Data
     public static function fromArray(array $data): self
     {
         return new self(
-            title: $data['title'],
+            title: $data['title'] ?? null,
             image: $data['image'],
             sticker: $data['sticker'] ?? null,
             backgroundImage: $data['background_image'] ?? null,
