@@ -2,6 +2,10 @@
 
 All notable changes to `filament-page-builder` will be documented in this file.
 
+## 2.3.1-beta - 2025-07-17
+
+Remove remove switch lang from listing
+
 ## Fix translation - 2025-07-08
 
 ### What's Changed
