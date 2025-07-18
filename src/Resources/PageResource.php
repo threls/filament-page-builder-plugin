@@ -76,12 +76,12 @@ class PageResource extends Resource
                     ->searchable(),
                 TextColumn::make('status')
                     ->badge()
-                    ->color(fn (PageStatusEnum $state): string => match ($state) {
+                    ->color(fn(PageStatusEnum $state): string => match ($state) {
                         PageStatusEnum::DRAFT => 'info',
                         PageStatusEnum::PUBLISHED => 'success',
                         PageStatusEnum::ARCHIVED => 'warning',
                     })
-                    ->formatStateUsing(fn (PageStatusEnum $state): string => $state->name)
+                    ->formatStateUsing(fn(PageStatusEnum $state): string => $state->name)
                     ->searchable(),
                 TextColumn::make('created_at')
                     ->dateTime()
@@ -105,12 +105,12 @@ class PageResource extends Resource
                     ->icon('heroicon-s-check')
                     ->color('success')
                     ->requiresConfirmation()
-                    ->action(fn (Page $record) => $record->update(['status' => PageStatusEnum::PUBLISHED])),
+                    ->action(fn(Page $record) => $record->update(['status' => PageStatusEnum::PUBLISHED])),
                 Action::make('archive')
                     ->icon('heroicon-s-archive-box-arrow-down')
                     ->color('warning')
                     ->requiresConfirmation()
-                    ->action(fn (Page $record) => $record->update(['status' => PageStatusEnum::ARCHIVED])),
+                    ->action(fn(Page $record) => $record->update(['status' => PageStatusEnum::ARCHIVED])),
                 DeleteAction::make(),
             ])
             ->bulkActions([
@@ -153,16 +153,16 @@ class PageResource extends Resource
                 ->required()
                 ->maxLength(255)
                 ->live(onBlur: true)
-                ->afterStateUpdated(fn (Set $set, ?string $state) => $set('slug', Str::slug($state))),
+                ->afterStateUpdated(fn(Set $set, ?string $state) => $set('slug', Str::slug($state))),
 
             TextInput::make('slug')
                 ->required()
-                ->maxLength(255),
+                ->readOnly(),
 
             Select::make('status')
                 ->label('Status')
                 ->default(PageStatusEnum::DRAFT->value)
-                ->options(collect(PageStatusEnum::cases())->mapWithKeys(fn ($case) => [
+                ->options(collect(PageStatusEnum::cases())->mapWithKeys(fn($case) => [
                     $case->value => $case->name,
                 ]))->required(),
 
@@ -170,224 +170,227 @@ class PageResource extends Resource
                 ->schema([
                     Builder::make('content')
                         ->label('Content')
+                        ->generateUuidUsing(false)
+                        ->reorderableWithDragAndDrop(false)
+                        ->reorderableWithButtons()
                         ->blocks([
-                                                Block::make(PageLayoutTypesEnum::HERO_SECTION->value)
-                                                    ->schema([
-                                                        TextInput::make('title')
-                                                            ->required(),
-                                                        TextInput::make('subtitle'),
+                            Block::make(PageLayoutTypesEnum::HERO_SECTION->value)
+                                ->schema([
+                                    TextInput::make('title')
+                                        ->required(),
+                                    TextInput::make('subtitle'),
 
-                                                        FileUpload::make('image')
-                                                            ->panelLayout('grid')
-                                                            ->directory('page-builder')
-                                                            ->image()
-                                                            ->nullable()
-                                                            ->disk(config('filament-page-builder.disk')),
+                                    FileUpload::make('image')
+                                        ->panelLayout('grid')
+                                        ->directory('page-builder')
+                                        ->image()
+                                        ->nullable()
+                                        ->disk(config('filament-page-builder.disk')),
 
-                                                        FileUpload::make('sticker')
-                                                            ->panelLayout('grid')
-                                                            ->directory('page-builder')
-                                                            ->image()
-                                                            ->nullable()
-                                                            ->disk(config('filament-page-builder.disk')),
+                                    FileUpload::make('sticker')
+                                        ->panelLayout('grid')
+                                        ->directory('page-builder')
+                                        ->image()
+                                        ->nullable()
+                                        ->disk(config('filament-page-builder.disk')),
 
-                                                        TextInput::make('button-text'),
-                                                        TextInput::make('button-path'),
-                                                    ])
-                                                    ->columns(),
+                                    TextInput::make('button-text'),
+                                    TextInput::make('button-path'),
+                                ])
+                                ->columns(),
 
-                                                Block::make(PageLayoutTypesEnum::IMAGE_GALLERY->value)
-                                                    ->schema([
-                                                        TextInput::make('text'),
-                                                        FileUpload::make('images')
-                                                            ->panelLayout('grid')
-                                                            ->directory('page-builder')
-                                                            ->multiple()
-                                                            ->reorderable()
-                                                            ->image()
-                                                            ->required()
-                                                            ->disk(config('filament-page-builder.disk')),
+                            Block::make(PageLayoutTypesEnum::IMAGE_GALLERY->value)
+                                ->schema([
+                                    TextInput::make('text'),
+                                    FileUpload::make('images')
+                                        ->panelLayout('grid')
+                                        ->directory('page-builder')
+                                        ->multiple()
+                                        ->reorderable()
+                                        ->image()
+                                        ->required()
+                                        ->disk(config('filament-page-builder.disk')),
 
-                                                        TextInput::make('button-text'),
-                                                        TextInput::make('button-path'),
-                                                    ]),
+                                    TextInput::make('button-text'),
+                                    TextInput::make('button-path'),
+                                ]),
 
-                                                Block::make(PageLayoutTypesEnum::IMAGE_CARDS->value)
-                                                    ->schema([
-                                                        TextInput::make('title')->nullable(),
-                                                        Repeater::make('group')->schema([
-                                                            TextInput::make('text'),
-                                                            FileUpload::make('image')
-                                                                ->directory('page-builder')
-                                                                ->panelLayout('grid')
-                                                                ->image()
-                                                                ->required()
-                                                                ->disk(config('filament-page-builder.disk')),
-                                                            TextInput::make('button-text'),
-                                                            TextInput::make('button-path'),
-                                                        ]),
-                                                    ]),
+                            Block::make(PageLayoutTypesEnum::IMAGE_CARDS->value)
+                                ->schema([
+                                    TextInput::make('title')->nullable(),
+                                    Repeater::make('group')->schema([
+                                        TextInput::make('text'),
+                                        FileUpload::make('image')
+                                            ->directory('page-builder')
+                                            ->panelLayout('grid')
+                                            ->image()
+                                            ->required()
+                                            ->disk(config('filament-page-builder.disk')),
+                                        TextInput::make('button-text'),
+                                        TextInput::make('button-path'),
+                                    ]),
+                                ]),
 
-                                                Block::make(PageLayoutTypesEnum::HORIZONTAL_TICKER->value)
-                                                    ->schema([
-                                                        TextInput::make('title')->nullable(),
-                                                        Repeater::make('group')
-                                                            ->schema([
-                                                                TextInput::make('title')
-                                                                    ->required(),
-                                                                Textarea::make('description')
-                                                                    ->nullable(),
+                            Block::make(PageLayoutTypesEnum::HORIZONTAL_TICKER->value)
+                                ->schema([
+                                    TextInput::make('title')->nullable(),
+                                    Repeater::make('group')
+                                        ->schema([
+                                            TextInput::make('title')
+                                                ->required(),
+                                            Textarea::make('description')
+                                                ->nullable(),
 
-                                                                FileUpload::make('images')
-                                                                    ->panelLayout('grid')
-                                                                    ->directory('page-builder')
-                                                                    ->multiple()
-                                                                    ->reorderable()
-                                                                    ->image()
-                                                                    ->required()
-                                                                    ->disk(config('filament-page-builder.disk')),
-                                                            ])
-                                                            ->columns(),
-                                                    ]),
+                                            FileUpload::make('images')
+                                                ->panelLayout('grid')
+                                                ->directory('page-builder')
+                                                ->multiple()
+                                                ->reorderable()
+                                                ->image()
+                                                ->required()
+                                                ->disk(config('filament-page-builder.disk')),
+                                        ])
+                                        ->columns(),
+                                ]),
 
-                                                Block::make(PageLayoutTypesEnum::BANNER->value)
-                                                    ->schema([
-                                                        TextInput::make('title')
-                                                            ->nullable(),
-                                                        TextInput::make('text')
-                                                            ->nullable(),
-                                                        RichEditor::make('description')
-                                                            ->nullable(),
-                                                        FileUpload::make('background-image')
-                                                            ->panelLayout('grid')
-                                                            ->directory('page-builder')
-                                                            ->image()
-                                                            ->nullable()
-                                                            ->disk(config('filament-page-builder.disk')),
-                                                        FileUpload::make('image')
-                                                            ->panelLayout('grid')
-                                                            ->directory('page-builder')
-                                                            ->image()
-                                                            ->nullable()
-                                                            ->disk(config('filament-page-builder.disk')),
+                            Block::make(PageLayoutTypesEnum::BANNER->value)
+                                ->schema([
+                                    TextInput::make('title')
+                                        ->nullable(),
+                                    TextInput::make('text')
+                                        ->nullable(),
+                                    RichEditor::make('description')
+                                        ->nullable(),
+                                    FileUpload::make('background-image')
+                                        ->panelLayout('grid')
+                                        ->directory('page-builder')
+                                        ->image()
+                                        ->nullable()
+                                        ->disk(config('filament-page-builder.disk')),
+                                    FileUpload::make('image')
+                                        ->panelLayout('grid')
+                                        ->directory('page-builder')
+                                        ->image()
+                                        ->nullable()
+                                        ->disk(config('filament-page-builder.disk')),
 
-                                                        TextInput::make('button-text'),
-                                                        TextInput::make('button-path'),
-                                                    ]),
+                                    TextInput::make('button-text'),
+                                    TextInput::make('button-path'),
+                                ]),
 
-                                                Block::make(PageLayoutTypesEnum::RICH_TEXT_PAGE->value)
-                                                    ->schema([
-                                                        TextInput::make('title')
-                                                            ->required(),
-                                                        RichEditor::make('content')
-                                                            ->required(),
-                                                    ]),
-                                                Block::make(PageLayoutTypesEnum::IMAGE_AND_RICH_TEXT->value)
-                                                    ->schema([
-                                                        Select::make('variant')
-                                                            ->label('Variant')
-                                                            ->default(SectionLayoutTypeEnum::IMAGE_LEFT_TEXT_RIGHT->value)
-                                                            ->options(collect(SectionLayoutTypeEnum::cases())->mapWithKeys(fn ($case) => [
-                                                                $case->value => $case->name,
-                                                            ]))->required(),
-                                                        TextInput::make('title')
-                                                            ->nullable(),
-                                                        FileUpload::make('image')
-                                                            ->panelLayout('grid')
-                                                            ->directory('page-builder')
-                                                            ->image()
-                                                            ->required()
-                                                            ->disk(config('admin.page_builder_disk')),
+                            Block::make(PageLayoutTypesEnum::RICH_TEXT_PAGE->value)
+                                ->schema([
+                                    TextInput::make('title')
+                                        ->required(),
+                                    RichEditor::make('content')
+                                        ->required(),
+                                ]),
+                            Block::make(PageLayoutTypesEnum::IMAGE_AND_RICH_TEXT->value)
+                                ->schema([
+                                    Select::make('variant')
+                                        ->label('Variant')
+                                        ->default(SectionLayoutTypeEnum::IMAGE_LEFT_TEXT_RIGHT->value)
+                                        ->options(collect(SectionLayoutTypeEnum::cases())->mapWithKeys(fn($case) => [
+                                            $case->value => $case->name,
+                                        ]))->required(),
+                                    TextInput::make('title')
+                                        ->nullable(),
+                                    FileUpload::make('image')
+                                        ->panelLayout('grid')
+                                        ->directory('page-builder')
+                                        ->image()
+                                        ->required()
+                                        ->disk(config('admin.page_builder_disk')),
 
-                                                        FileUpload::make('sticker')
-                                                            ->panelLayout('grid')
-                                                            ->directory('page-builder')
-                                                            ->image()
-                                                            ->nullable()
-                                                            ->disk(config('filament-page-builder.disk')),
+                                    FileUpload::make('sticker')
+                                        ->panelLayout('grid')
+                                        ->directory('page-builder')
+                                        ->image()
+                                        ->nullable()
+                                        ->disk(config('filament-page-builder.disk')),
 
-                                                        FileUpload::make('background-image')
-                                                            ->panelLayout('grid')
-                                                            ->directory('page-builder')
-                                                            ->image()
-                                                            ->nullable()
-                                                            ->disk(config('filament-page-builder.disk')),
-                                                        RichEditor::make('content')
-                                                            ->required(),
-                                                    ]),
+                                    FileUpload::make('background-image')
+                                        ->panelLayout('grid')
+                                        ->directory('page-builder')
+                                        ->image()
+                                        ->nullable()
+                                        ->disk(config('filament-page-builder.disk')),
+                                    RichEditor::make('content')
+                                        ->required(),
+                                ]),
 
 
-                                                Block::make(PageLayoutTypesEnum::KEY_VALUE_SECTION->value)
-                                                    ->schema([
-                                                        Select::make('variant')
-                                                            ->label('Variant')
-                                                            ->default(PageGridStyleEnum::NORMAL_GRID->value)
-                                                            ->options(collect(PageGridStyleEnum::cases())->mapWithKeys(fn ($case) => [
-                                                                $case->value => $case->name,
-                                                            ]))->required(),
-                                                        TextInput::make('title')
-                                                        ->nullable(),
-                                                        Repeater::make('group')
-                                                            ->schema([
-                                                                TextInput::make('title')
-                                                                    ->live(onBlur: true)
-                                                                    ->afterStateUpdated(fn (Set $set, ?string $state) => $set('key', Str::slug($state)))
-                                                                    ->required(),
-                                                                TextInput::make('key')
-                                                                    ->readOnly(),
-                                                                RichEditor::make('description')
-                                                                    ->required(),
-                                                                TextInput::make('hint')
-                                                                    ->nullable(),
-                                                                FileUpload::make('image')
-                                                                    ->panelLayout('grid')
-                                                                    ->directory('page-builder')
-                                                                    ->image()
-                                                                    ->nullable()
-                                                                    ->disk(config('filament-page-builder.disk')),
-                                                            ])->columns(),
-                                                    ]),
+                            Block::make(PageLayoutTypesEnum::KEY_VALUE_SECTION->value)
+                                ->schema([
+                                    Select::make('variant')
+                                        ->label('Variant')
+                                        ->default(PageGridStyleEnum::NORMAL_GRID->value)
+                                        ->options(collect(PageGridStyleEnum::cases())->mapWithKeys(fn($case) => [
+                                            $case->value => $case->name,
+                                        ]))->required(),
+                                    TextInput::make('title')
+                                        ->nullable(),
+                                    Repeater::make('group')
+                                        ->schema([
+                                            TextInput::make('title')
+                                                ->live(onBlur: true)
+                                                ->afterStateUpdated(fn(Set $set, ?string $state) => $set('key', Str::slug($state)))
+                                                ->required(),
+                                            TextInput::make('key')
+                                                ->readOnly(),
+                                            RichEditor::make('description')
+                                                ->required(),
+                                            TextInput::make('hint')
+                                                ->nullable(),
+                                            FileUpload::make('image')
+                                                ->panelLayout('grid')
+                                                ->directory('page-builder')
+                                                ->image()
+                                                ->nullable()
+                                                ->disk(config('filament-page-builder.disk')),
+                                        ])->columns(),
+                                ]),
 
-                                                Block::make(PageLayoutTypesEnum::MAP_LOCATION->value)
-                                                    ->schema([
-                                                        TextInput::make('title')
-                                                            ->required(),
-                                                        TextInput::make('latitude')->required(),
-                                                        TextInput::make('longitude')->required(),
-                                                        TextInput::make('address'),
-                                                    ]),
+                            Block::make(PageLayoutTypesEnum::MAP_LOCATION->value)
+                                ->schema([
+                                    TextInput::make('title')
+                                        ->required(),
+                                    TextInput::make('latitude')->required(),
+                                    TextInput::make('longitude')->required(),
+                                    TextInput::make('address'),
+                                ]),
 
-                                                Block::make(PageLayoutTypesEnum::RELATIONSHIP_CONTENT->value)
-                                                    ->schema([
-                                                        Select::make('relationship')
-                                                            ->options(collect(PageRelationshipTypeEnum::cases())->mapWithKeys(fn ($case) => [
-                                                                $case->value => $case->name,
-                                                            ]))
-                                                            ->required()
-                                                            ->searchable(),
-                                                    ]),
+                            Block::make(PageLayoutTypesEnum::RELATIONSHIP_CONTENT->value)
+                                ->schema([
+                                    Select::make('relationship')
+                                        ->options(collect(PageRelationshipTypeEnum::cases())->mapWithKeys(fn($case) => [
+                                            $case->value => $case->name,
+                                        ]))
+                                        ->required()
+                                        ->searchable(),
+                                ]),
 
-                                                Block::make(PageLayoutTypesEnum::DIVIDER->value)
-                                                    ->schema([
-                                                    ]),
+                            Block::make(PageLayoutTypesEnum::DIVIDER->value)
+                                ->schema([
+                                ]),
 
-                                                Block::make(PageLayoutTypesEnum::VIDEO_EMBEDDER->value)
-                                                    ->schema([
-                                                        TextInput::make('title')
-                                                            ->nullable(),
-                                                        FileUpload::make('video')
-                                                            ->panelLayout('grid')
-                                                            ->directory('page-builder')
-                                                            ->acceptedFileTypes(['video/mp4', 'video/avi', 'video/mpeg', 'video/quicktime'])
-                                                            ->disk(config('admin.page_builder_disk'))
-                                                            ->maxSize(20048)
-                                                            ->nullable()
-                                                            ->requiredWithout('external_url'),
-                                                        TextInput::make('external_url')
-                                                            ->nullable()
-                                                            ->requiredWithout('video')
-                                                    ]),
-                                        ]),
+                            Block::make(PageLayoutTypesEnum::VIDEO_EMBEDDER->value)
+                                ->schema([
+                                    TextInput::make('title')
+                                        ->nullable(),
+                                    FileUpload::make('video')
+                                        ->panelLayout('grid')
+                                        ->directory('page-builder')
+                                        ->acceptedFileTypes(['video/mp4', 'video/avi', 'video/mpeg', 'video/quicktime'])
+                                        ->disk(config('admin.page_builder_disk'))
+                                        ->maxSize(20048)
+                                        ->nullable()
+                                        ->requiredWithout('external_url'),
+                                    TextInput::make('external_url')
+                                        ->nullable()
+                                        ->requiredWithout('video')
+                                ]),
+                        ]),
                 ]),
         ];
     }
