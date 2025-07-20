@@ -10,7 +10,7 @@ return new class extends Migration
     {
         Schema::create('page_translations', function (Blueprint $table) {
             $table->id();
-            $table->integer('page_id')->unsigned();
+            $table->bigInteger('page_id')->unsigned();
             $table->string('locale')->index();
             $table->json('content')->nullable();
             $table->unique(['page_id', 'locale']);

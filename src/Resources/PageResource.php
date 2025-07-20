@@ -27,6 +27,7 @@ use Filament\Tables\Actions\RestoreBulkAction;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\TrashedFilter;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
 use Threls\FilamentPageBuilder\Enums\PageLayoutTypesEnum;
 use Threls\FilamentPageBuilder\Enums\PageGridStyleEnum;
@@ -132,6 +133,11 @@ class PageResource extends Resource
         ];
     }
 
+    public static function canDelete(Model $record): bool
+    {
+        return false;
+    }
+
 
     public static function getFormSchema(): array
     {
@@ -153,10 +159,11 @@ class PageResource extends Resource
                     $case->value => $case->name,
                 ]))->required(),
 
-            TranslatableTabs::make()
-                ->localeTabSchema(fn(TranslatableTab $tab) => [
-                    Section::make('Page builder')
-                        ->schema([
+
+            Section::make('Page builder')
+                ->schema([
+                    TranslatableTabs::make()
+                        ->localeTabSchema(fn(TranslatableTab $tab) => [
                             Builder::make($tab->makeName('content'))
                                 ->label('Content')
                                 ->generateUuidUsing(false)
