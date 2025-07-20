@@ -2,6 +2,7 @@
 
 namespace Threls\FilamentPageBuilder;
 
+use Astrotomic\Translatable\TranslatableServiceProvider;
 use Spatie\LaravelPackageTools\Package;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
 use Threls\FilamentPageBuilder\Http\Middleware\SetApiLocale;
@@ -18,7 +19,12 @@ class PageBuilderServiceProvider extends PackageServiceProvider
             ->hasConfigFile()
             ->hasViews()
             ->hasRoute('api')
-            ->hasMigration('2025_01_28_120000_create_pages_table');
+            ->hasMigrations([
+                'create_pages_table',
+                'create_page_translations_table',
+            ])
+            ->publishesServiceProvider(TranslatableServiceProvider::class)
+        ;
     }
 
     public function packageRegistered(): void

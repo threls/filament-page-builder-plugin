@@ -8,14 +8,9 @@ A flexible page builder plugin for Filament v3 with multiple content blocks, per
 ## Features
 
 - **Multiple Content Blocks**: Hero sections, image galleries, banners, rich text, and more
-- **Drag & Drop Builder**: Visual page building with Filament's Builder component
 - **File Management**: Integrated file uploads with configurable storage disks
 - **Status Management**: Draft, Published, and Archived page states
-- **Relationship Content**: Display related content like testimonials, FAQs, events
 - **Multi-language Support**: Built-in language switching capability
-- **Configurable**: Customizable settings and extensible block system
-- **Clean Code**: Well-structured with Data Transfer Objects and proper separation of concerns
-
 ## Installation
 
 You can install the package via composer:
@@ -83,15 +78,6 @@ return [
     'navigation_group' => 'Content',
     'navigation_icon' => 'heroicon-o-rectangle-stack',
 
-    // Relationship types
-    'relationship_types' => [
-        'testimonial' => 'Testimonials',
-        'faq' => 'FAQs',
-        'event' => 'Events',
-    ],
-
-    // Custom blocks (extend functionality)
-    'custom_blocks' => [],
 
     // API settings
     'api' => [
@@ -162,69 +148,13 @@ You can configure the API in the config file:
 'language_switch' => [
     'enabled' => true,
     'locales' => [
-        'en' => 'English',
+        'en' => 'EN',
         // Add more languages as needed
     ],
     'default_locale' => 'en',
 ],
 ```
 
-### Multi-language Support
-
-The package includes built-in language switching capabilities powered by the FilamentLanguageSwitch plugin:
-
-```php
-// The language switch is automatically configured
-// Users can switch between available languages in the Filament panel
-
-// You can publish the language switch configuration
-php artisan vendor:publish --tag="filament-language-switch-config"
-
-// Add new language translations by creating files in the resources/lang/{locale} directory
-```
-
-### Extending the Page Builder
-
-#### Adding Custom Blocks
-
-You can add custom blocks by extending the configuration:
-
-```php
-// In your config/filament-page-builder.php
-'custom_blocks' => [
-    'testimonial-carousel' => [
-        'label' => 'Testimonial Carousel',
-        'schema' => [
-            TextInput::make('title')->required(),
-            Repeater::make('testimonials')->schema([
-                TextInput::make('name')->required(),
-                Textarea::make('quote')->required(),
-                FileUpload::make('avatar')->image(),
-            ]),
-        ]
-    ]
-],
-```
-
-#### Customizing Relationship Types
-
-Modify the `relationship_types` configuration to match your application's models:
-
-```php
-'relationship_types' => [
-    'product' => 'Products',
-    'service' => 'Services',
-    'team_member' => 'Team Members',
-],
-```
-
-## Data Structure
-
-The package uses Spatie's Laravel Data for type-safe data handling:
-
-- `PageData`: Main page data structure
-- `ContentBlockData`: Individual content block wrapper
-- Component-specific data classes: `HeroSectionData`, `ImageGalleryData`, etc.
 
 ## Requirements
 
@@ -233,11 +163,6 @@ The package uses Spatie's Laravel Data for type-safe data handling:
 - Filament 3.2 or higher
 - Spatie Laravel Query Builder 6.3 or higher (for API functionality)
 
-## Testing
-
-```bash
-composer test
-```
 
 ## Changelog
 
