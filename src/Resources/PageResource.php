@@ -112,14 +112,7 @@ class PageResource extends Resource
                     ->color('warning')
                     ->requiresConfirmation()
                     ->action(fn(Page $record) => $record->update(['status' => PageStatusEnum::ARCHIVED])),
-                DeleteAction::make(),
-            ])
-            ->bulkActions([
-                BulkActionGroup::make([
-                    DeleteBulkAction::make(),
-                    ForceDeleteBulkAction::make(),
-                    RestoreBulkAction::make(),
-                ]),
+                DeleteAction::make()->disabled(),
             ]);
     }
 
