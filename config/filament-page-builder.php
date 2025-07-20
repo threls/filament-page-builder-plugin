@@ -52,50 +52,6 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Enable Relationships
-    |--------------------------------------------------------------------------
-    |
-    | Whether to enable relationship content blocks in the page builder.
-    |
-    */
-    'enable_relationships' => true,
-
-    /*
-    |--------------------------------------------------------------------------
-    | Available Relationship Types
-    |--------------------------------------------------------------------------
-    |
-    | Define which relationship types are available in the page builder.
-    | You can customize this based on your application's needs.
-    |
-    */
-    'relationship_types' => [
-        'testimonial' => 'Testimonials',
-        'faq' => 'FAQs',
-        'event' => 'Events',
-    ],
-
-    /*
-    |--------------------------------------------------------------------------
-    | Custom Blocks
-    |--------------------------------------------------------------------------
-    |
-    | Register custom blocks for the page builder.
-    | Each block should have a unique key and a corresponding form schema.
-    |
-    */
-    'custom_blocks' => [
-        // Example:
-        // 'custom-block' => [
-        //     'label' => 'Custom Block',
-        //     'schema' => [
-        //         // Filament form components
-        //     ]
-        // ]
-    ],
-
-    /*
-    |--------------------------------------------------------------------------
     | API Settings
     |--------------------------------------------------------------------------
     |
@@ -107,29 +63,4 @@ return [
         'prefix' => env('FILAMENT_PAGE_BUILDER_API_PREFIX', 'api'),
         'middleware' => ['api'],
     ],
-
-    /*
-    |--------------------------------------------------------------------------
-    | Available Languages
-    |--------------------------------------------------------------------------
-    |
-    | Configure available languages for the page builder.
-    | These languages will be used for the Filament language switcher
-    | and for creating translatable content tabs.
-    |
-    */
-    'languages' => [
-        'en' => 'EN',
-        'mt' => 'MT',
-    ],
-
-    /*
-    |--------------------------------------------------------------------------
-    | Default Language
-    |--------------------------------------------------------------------------
-    |
-    | The default language for the page builder.
-    |
-    */
-    'default_language' => 'en',
 ];
