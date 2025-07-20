@@ -2,6 +2,14 @@
 
 All notable changes to `filament-page-builder` will be documented in this file.
 
+## 2.3.3-beta - 2025-07-20
+
+### What's Changed
+
+* feat: change multilang library for pages by @sabina1997 in https://github.com/threls/filament-page-builder-plugin/pull/6
+
+**Full Changelog**: https://github.com/threls/filament-page-builder-plugin/compare/2.3.2-beta...2.3.3-beta
+
 ## 2.3.1-beta - 2025-07-17
 
 Remove remove switch lang from listing

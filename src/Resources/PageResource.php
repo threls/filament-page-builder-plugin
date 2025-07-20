@@ -2,6 +2,9 @@
 
 namespace Threls\FilamentPageBuilder\Resources;
 
+use CactusGalaxy\FilamentAstrotomic\Forms\Components\TranslatableTabs;
+use CactusGalaxy\FilamentAstrotomic\Resources\Concerns\ResourceTranslatable;
+use CactusGalaxy\FilamentAstrotomic\TranslatableTab;
 use Filament\Forms\Components\Builder;
 use Filament\Forms\Components\Builder\Block;
 use Filament\Forms\Components\FileUpload;
@@ -13,7 +16,6 @@ use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Form;
 use Filament\Forms\Set;
-use Filament\Resources\Concerns\Translatable;
 use Filament\Resources\Resource;
 use Filament\Tables\Actions\Action;
 use Filament\Tables\Actions\BulkActionGroup;
@@ -25,8 +27,6 @@ use Filament\Tables\Actions\RestoreBulkAction;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\TrashedFilter;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder as EloquentBuilder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Support\Str;
 use Threls\FilamentPageBuilder\Enums\PageLayoutTypesEnum;
 use Threls\FilamentPageBuilder\Enums\PageGridStyleEnum;
@@ -40,7 +40,7 @@ use Threls\FilamentPageBuilder\Resources\PageResource\Pages\ListPages;
 
 class PageResource extends Resource
 {
-    use Translatable;
+    use ResourceTranslatable;
 
     protected static ?string $model = Page::class;
 
@@ -122,12 +122,6 @@ class PageResource extends Resource
             ]);
     }
 
-    public static function getRelations(): array
-    {
-        return [
-            //
-        ];
-    }
 
     public static function getPages(): array
     {
@@ -138,13 +132,6 @@ class PageResource extends Resource
         ];
     }
 
-    public static function getEloquentQuery(): EloquentBuilder
-    {
-        return parent::getEloquentQuery()
-            ->withoutGlobalScopes([
-                SoftDeletingScope::class,
-            ]);
-    }
 
     public static function getFormSchema(): array
     {
@@ -166,231 +153,235 @@ class PageResource extends Resource
                     $case->value => $case->name,
                 ]))->required(),
 
-            Section::make('Page builder')
-                ->schema([
-                    Builder::make('content')
-                        ->label('Content')
-                        ->generateUuidUsing(false)
-                        ->reorderableWithDragAndDrop(false)
-                        ->reorderableWithButtons()
-                        ->blocks([
-                            Block::make(PageLayoutTypesEnum::HERO_SECTION->value)
-                                ->schema([
-                                    TextInput::make('title')
-                                        ->required(),
-                                    TextInput::make('subtitle'),
-
-                                    FileUpload::make('image')
-                                        ->panelLayout('grid')
-                                        ->directory('page-builder')
-                                        ->image()
-                                        ->nullable()
-                                        ->disk(config('filament-page-builder.disk')),
-
-                                    FileUpload::make('sticker')
-                                        ->panelLayout('grid')
-                                        ->directory('page-builder')
-                                        ->image()
-                                        ->nullable()
-                                        ->disk(config('filament-page-builder.disk')),
-
-                                    TextInput::make('button-text'),
-                                    TextInput::make('button-path'),
-                                ])
-                                ->columns(),
-
-                            Block::make(PageLayoutTypesEnum::IMAGE_GALLERY->value)
-                                ->schema([
-                                    TextInput::make('text'),
-                                    FileUpload::make('images')
-                                        ->panelLayout('grid')
-                                        ->directory('page-builder')
-                                        ->multiple()
-                                        ->reorderable()
-                                        ->image()
-                                        ->required()
-                                        ->disk(config('filament-page-builder.disk')),
-
-                                    TextInput::make('button-text'),
-                                    TextInput::make('button-path'),
-                                ]),
-
-                            Block::make(PageLayoutTypesEnum::IMAGE_CARDS->value)
-                                ->schema([
-                                    TextInput::make('title')->nullable(),
-                                    Repeater::make('group')->schema([
-                                        TextInput::make('text'),
-                                        FileUpload::make('image')
-                                            ->directory('page-builder')
-                                            ->panelLayout('grid')
-                                            ->image()
-                                            ->required()
-                                            ->disk(config('filament-page-builder.disk')),
-                                        TextInput::make('button-text'),
-                                        TextInput::make('button-path'),
-                                    ]),
-                                ]),
-
-                            Block::make(PageLayoutTypesEnum::HORIZONTAL_TICKER->value)
-                                ->schema([
-                                    TextInput::make('title')->nullable(),
-                                    Repeater::make('group')
+            TranslatableTabs::make()
+                ->localeTabSchema(fn(TranslatableTab $tab) => [
+                    Section::make('Page builder')
+                        ->schema([
+                            Builder::make($tab->makeName('content'))
+                                ->label('Content')
+                                ->generateUuidUsing(false)
+                                ->reorderableWithDragAndDrop(false)
+                                ->reorderableWithButtons()
+                                ->blocks([
+                                    Block::make(PageLayoutTypesEnum::HERO_SECTION->value)
                                         ->schema([
                                             TextInput::make('title')
-                                                ->required(),
-                                            Textarea::make('description')
-                                                ->nullable(),
+                                                ->required($tab->isMainLocale()),
+                                            TextInput::make('subtitle'),
 
-                                            FileUpload::make('images')
-                                                ->panelLayout('grid')
-                                                ->directory('page-builder')
-                                                ->multiple()
-                                                ->reorderable()
-                                                ->image()
-                                                ->required()
-                                                ->disk(config('filament-page-builder.disk')),
-                                        ])
-                                        ->columns(),
-                                ]),
-
-                            Block::make(PageLayoutTypesEnum::BANNER->value)
-                                ->schema([
-                                    TextInput::make('title')
-                                        ->nullable(),
-                                    TextInput::make('text')
-                                        ->nullable(),
-                                    RichEditor::make('description')
-                                        ->nullable(),
-                                    FileUpload::make('background-image')
-                                        ->panelLayout('grid')
-                                        ->directory('page-builder')
-                                        ->image()
-                                        ->nullable()
-                                        ->disk(config('filament-page-builder.disk')),
-                                    FileUpload::make('image')
-                                        ->panelLayout('grid')
-                                        ->directory('page-builder')
-                                        ->image()
-                                        ->nullable()
-                                        ->disk(config('filament-page-builder.disk')),
-
-                                    TextInput::make('button-text'),
-                                    TextInput::make('button-path'),
-                                ]),
-
-                            Block::make(PageLayoutTypesEnum::RICH_TEXT_PAGE->value)
-                                ->schema([
-                                    TextInput::make('title')
-                                        ->required(),
-                                    RichEditor::make('content')
-                                        ->required(),
-                                ]),
-                            Block::make(PageLayoutTypesEnum::IMAGE_AND_RICH_TEXT->value)
-                                ->schema([
-                                    Select::make('variant')
-                                        ->label('Variant')
-                                        ->default(SectionLayoutTypeEnum::IMAGE_LEFT_TEXT_RIGHT->value)
-                                        ->options(collect(SectionLayoutTypeEnum::cases())->mapWithKeys(fn($case) => [
-                                            $case->value => $case->name,
-                                        ]))->required(),
-                                    TextInput::make('title')
-                                        ->nullable(),
-                                    FileUpload::make('image')
-                                        ->panelLayout('grid')
-                                        ->directory('page-builder')
-                                        ->image()
-                                        ->required()
-                                        ->disk(config('admin.page_builder_disk')),
-
-                                    FileUpload::make('sticker')
-                                        ->panelLayout('grid')
-                                        ->directory('page-builder')
-                                        ->image()
-                                        ->nullable()
-                                        ->disk(config('filament-page-builder.disk')),
-
-                                    FileUpload::make('background-image')
-                                        ->panelLayout('grid')
-                                        ->directory('page-builder')
-                                        ->image()
-                                        ->nullable()
-                                        ->disk(config('filament-page-builder.disk')),
-                                    RichEditor::make('content')
-                                        ->required(),
-                                ]),
-
-
-                            Block::make(PageLayoutTypesEnum::KEY_VALUE_SECTION->value)
-                                ->schema([
-                                    Select::make('variant')
-                                        ->label('Variant')
-                                        ->default(PageGridStyleEnum::NORMAL_GRID->value)
-                                        ->options(collect(PageGridStyleEnum::cases())->mapWithKeys(fn($case) => [
-                                            $case->value => $case->name,
-                                        ]))->required(),
-                                    TextInput::make('title')
-                                        ->nullable(),
-                                    Repeater::make('group')
-                                        ->schema([
-                                            TextInput::make('title')
-                                                ->live(onBlur: true)
-                                                ->afterStateUpdated(fn(Set $set, ?string $state) => $set('key', Str::slug($state)))
-                                                ->required(),
-                                            TextInput::make('key')
-                                                ->readOnly(),
-                                            RichEditor::make('description')
-                                                ->required(),
-                                            TextInput::make('hint')
-                                                ->nullable(),
                                             FileUpload::make('image')
                                                 ->panelLayout('grid')
                                                 ->directory('page-builder')
                                                 ->image()
                                                 ->nullable()
                                                 ->disk(config('filament-page-builder.disk')),
-                                        ])->columns(),
-                                ]),
 
-                            Block::make(PageLayoutTypesEnum::MAP_LOCATION->value)
-                                ->schema([
-                                    TextInput::make('title')
-                                        ->required(),
-                                    TextInput::make('latitude')->required(),
-                                    TextInput::make('longitude')->required(),
-                                    TextInput::make('address'),
-                                ]),
+                                            FileUpload::make('sticker')
+                                                ->panelLayout('grid')
+                                                ->directory('page-builder')
+                                                ->image()
+                                                ->nullable()
+                                                ->disk(config('filament-page-builder.disk')),
 
-                            Block::make(PageLayoutTypesEnum::RELATIONSHIP_CONTENT->value)
-                                ->schema([
-                                    Select::make('relationship')
-                                        ->options(collect(PageRelationshipTypeEnum::cases())->mapWithKeys(fn($case) => [
-                                            $case->value => $case->name,
-                                        ]))
-                                        ->required()
-                                        ->searchable(),
-                                ]),
+                                            TextInput::make('button-text'),
+                                            TextInput::make('button-path'),
+                                        ])
+                                        ->columns(),
 
-                            Block::make(PageLayoutTypesEnum::DIVIDER->value)
-                                ->schema([
-                                ]),
+                                    Block::make(PageLayoutTypesEnum::IMAGE_GALLERY->value)
+                                        ->schema([
+                                            TextInput::make('text'),
+                                            FileUpload::make('images')
+                                                ->panelLayout('grid')
+                                                ->directory('page-builder')
+                                                ->multiple()
+                                                ->reorderable()
+                                                ->image()
+                                                ->required($tab->isMainLocale())
+                                                ->disk(config('filament-page-builder.disk')),
 
-                            Block::make(PageLayoutTypesEnum::VIDEO_EMBEDDER->value)
-                                ->schema([
-                                    TextInput::make('title')
-                                        ->nullable(),
-                                    FileUpload::make('video')
-                                        ->panelLayout('grid')
-                                        ->directory('page-builder')
-                                        ->acceptedFileTypes(['video/mp4', 'video/avi', 'video/mpeg', 'video/quicktime'])
-                                        ->disk(config('admin.page_builder_disk'))
-                                        ->maxSize(20048)
-                                        ->nullable()
-                                        ->requiredWithout('external_url'),
-                                    TextInput::make('external_url')
-                                        ->nullable()
-                                        ->requiredWithout('video')
+                                            TextInput::make('button-text'),
+                                            TextInput::make('button-path'),
+                                        ]),
+
+                                    Block::make(PageLayoutTypesEnum::IMAGE_CARDS->value)
+                                        ->schema([
+                                            TextInput::make('title')->nullable(),
+                                            Repeater::make('group')->schema([
+                                                TextInput::make('text'),
+                                                FileUpload::make('image')
+                                                    ->directory('page-builder')
+                                                    ->panelLayout('grid')
+                                                    ->image()
+                                                    ->required($tab->isMainLocale())
+                                                    ->disk(config('filament-page-builder.disk')),
+                                                TextInput::make('button-text'),
+                                                TextInput::make('button-path'),
+                                            ]),
+                                        ]),
+
+                                    Block::make(PageLayoutTypesEnum::HORIZONTAL_TICKER->value)
+                                        ->schema([
+                                            TextInput::make('title')->nullable(),
+                                            Repeater::make('group')
+                                                ->schema([
+                                                    TextInput::make('title')
+                                                        ->required($tab->isMainLocale()),
+                                                    Textarea::make('description')
+                                                        ->nullable(),
+
+                                                    FileUpload::make('images')
+                                                        ->panelLayout('grid')
+                                                        ->directory('page-builder')
+                                                        ->multiple()
+                                                        ->reorderable()
+                                                        ->image()
+                                                        ->required($tab->isMainLocale())
+                                                        ->disk(config('filament-page-builder.disk')),
+                                                ])
+                                                ->columns(),
+                                        ]),
+
+                                    Block::make(PageLayoutTypesEnum::BANNER->value)
+                                        ->schema([
+                                            TextInput::make('title')
+                                                ->nullable(),
+                                            TextInput::make('text')
+                                                ->nullable(),
+                                            RichEditor::make('description')
+                                                ->nullable(),
+                                            FileUpload::make('background-image')
+                                                ->panelLayout('grid')
+                                                ->directory('page-builder')
+                                                ->image()
+                                                ->nullable()
+                                                ->disk(config('filament-page-builder.disk')),
+                                            FileUpload::make('image')
+                                                ->panelLayout('grid')
+                                                ->directory('page-builder')
+                                                ->image()
+                                                ->nullable()
+                                                ->disk(config('filament-page-builder.disk')),
+
+                                            TextInput::make('button-text'),
+                                            TextInput::make('button-path'),
+                                        ]),
+
+                                    Block::make(PageLayoutTypesEnum::RICH_TEXT_PAGE->value)
+                                        ->schema([
+                                            TextInput::make('title')
+                                                ->required($tab->isMainLocale()),
+                                            RichEditor::make('content')
+                                                ->required($tab->isMainLocale()),
+                                        ]),
+                                    Block::make(PageLayoutTypesEnum::IMAGE_AND_RICH_TEXT->value)
+                                        ->schema([
+                                            Select::make('variant')
+                                                ->label('Variant')
+                                                ->default(SectionLayoutTypeEnum::IMAGE_LEFT_TEXT_RIGHT->value)
+                                                ->options(collect(SectionLayoutTypeEnum::cases())->mapWithKeys(fn($case) => [
+                                                    $case->value => $case->name,
+                                                ]))->required($tab->isMainLocale()),
+                                            TextInput::make('title')
+                                                ->nullable(),
+                                            FileUpload::make('image')
+                                                ->panelLayout('grid')
+                                                ->directory('page-builder')
+                                                ->image()
+                                                ->required($tab->isMainLocale())
+                                                ->disk(config('admin.page_builder_disk')),
+
+                                            FileUpload::make('sticker')
+                                                ->panelLayout('grid')
+                                                ->directory('page-builder')
+                                                ->image()
+                                                ->nullable()
+                                                ->disk(config('filament-page-builder.disk')),
+
+                                            FileUpload::make('background-image')
+                                                ->panelLayout('grid')
+                                                ->directory('page-builder')
+                                                ->image()
+                                                ->nullable()
+                                                ->disk(config('filament-page-builder.disk')),
+                                            RichEditor::make('content')
+                                                ->required(),
+                                        ]),
+
+
+                                    Block::make(PageLayoutTypesEnum::KEY_VALUE_SECTION->value)
+                                        ->schema([
+                                            Select::make('variant')
+                                                ->label('Variant')
+                                                ->default(PageGridStyleEnum::NORMAL_GRID->value)
+                                                ->options(collect(PageGridStyleEnum::cases())->mapWithKeys(fn($case) => [
+                                                    $case->value => $case->name,
+                                                ]))->required($tab->isMainLocale()),
+                                            TextInput::make('title')
+                                                ->nullable(),
+                                            Repeater::make('group')
+                                                ->schema([
+                                                    TextInput::make('title')
+                                                        ->live(onBlur: true)
+                                                        ->afterStateUpdated(fn(Set $set, ?string $state) => $set('key', Str::slug($state)))
+                                                        ->required($tab->isMainLocale()),
+                                                    TextInput::make('key')
+                                                        ->readOnly(),
+                                                    RichEditor::make('description')
+                                                        ->required($tab->isMainLocale()),
+                                                    TextInput::make('hint')
+                                                        ->nullable(),
+                                                    FileUpload::make('image')
+                                                        ->panelLayout('grid')
+                                                        ->directory('page-builder')
+                                                        ->image()
+                                                        ->nullable()
+                                                        ->disk(config('filament-page-builder.disk')),
+                                                ])->columns(),
+                                        ]),
+
+                                    Block::make(PageLayoutTypesEnum::MAP_LOCATION->value)
+                                        ->schema([
+                                            TextInput::make('title')
+                                                ->required($tab->isMainLocale()),
+                                            TextInput::make('latitude')->required(),
+                                            TextInput::make('longitude')->required(),
+                                            TextInput::make('address'),
+                                        ]),
+
+                                    Block::make(PageLayoutTypesEnum::RELATIONSHIP_CONTENT->value)
+                                        ->schema([
+                                            Select::make('relationship')
+                                                ->options(collect(PageRelationshipTypeEnum::cases())->mapWithKeys(fn($case) => [
+                                                    $case->value => $case->name,
+                                                ]))
+                                                ->required($tab->isMainLocale())
+                                                ->searchable(),
+                                        ]),
+
+                                    Block::make(PageLayoutTypesEnum::DIVIDER->value)
+                                        ->schema([
+                                        ]),
+
+                                    Block::make(PageLayoutTypesEnum::VIDEO_EMBEDDER->value)
+                                        ->schema([
+                                            TextInput::make('title')
+                                                ->nullable(),
+                                            FileUpload::make('video')
+                                                ->panelLayout('grid')
+                                                ->directory('page-builder')
+                                                ->acceptedFileTypes(['video/mp4', 'video/avi', 'video/mpeg', 'video/quicktime'])
+                                                ->disk(config('admin.page_builder_disk'))
+                                                ->maxSize(20048)
+                                                ->nullable()
+                                                ->requiredWithout('external_url'),
+                                            TextInput::make('external_url')
+                                                ->nullable()
+                                                ->requiredWithout('video')
+                                        ]),
                                 ]),
                         ]),
+
                 ]),
         ];
     }
