@@ -2,14 +2,14 @@
 
 namespace Threls\FilamentPageBuilder\Resources\PageResource\Pages;
 
+use CactusGalaxy\FilamentAstrotomic\Resources\Pages\Record\CreateTranslatable;
 use Filament\Actions;
 use Filament\Resources\Pages\CreateRecord;
-use Filament\Resources\Pages\CreateRecord\Concerns\Translatable;
 use Threls\FilamentPageBuilder\Resources\PageResource;
 
 class CreatePage extends CreateRecord
 {
-    use Translatable;
+    use CreateTranslatable;
 
     protected static string $resource = PageResource::class;
 

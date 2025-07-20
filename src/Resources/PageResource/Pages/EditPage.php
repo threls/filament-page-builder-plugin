@@ -2,6 +2,7 @@
 
 namespace Threls\FilamentPageBuilder\Resources\PageResource\Pages;
 
+use CactusGalaxy\FilamentAstrotomic\Resources\Pages\Record\EditTranslatable;
 use Filament\Actions;
 use Filament\Resources\Pages\EditRecord;
 use Filament\Resources\Pages\EditRecord\Concerns\Translatable;
@@ -9,7 +10,7 @@ use Threls\FilamentPageBuilder\Resources\PageResource;
 
 class EditPage extends EditRecord
 {
-    use Translatable;
+    use EditTranslatable;
 
     protected static string $resource = PageResource::class;
 

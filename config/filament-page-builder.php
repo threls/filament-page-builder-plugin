@@ -119,7 +119,8 @@ return [
     |
     */
     'languages' => [
-        'en' => 'English',
+        'en' => 'EN',
+        'mt' => 'MT',
     ],
 
     /*

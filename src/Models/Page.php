@@ -7,18 +7,19 @@ use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
-use Spatie\Translatable\HasTranslations;
 use Threls\FilamentPageBuilder\Enums\PageStatusEnum;
+use Astrotomic\Translatable\Contracts\Translatable as TranslatableContract;
+use Astrotomic\Translatable\Translatable;
 
-class Page extends Model implements HasMedia
+class Page extends Model implements HasMedia, TranslatableContract
 {
-    use HasTranslations;
     use InteractsWithMedia;
     use SoftDeletes;
+    use Translatable;
 
     protected $guarded = ['id'];
 
-    public array $translatable = ['title', 'content'];
+    public array $translatedAttributes = ['title', 'content'];
 
     public function resource(): MorphTo
     {
