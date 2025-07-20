@@ -63,4 +63,11 @@ return [
         'prefix' => env('FILAMENT_PAGE_BUILDER_API_PREFIX', 'api'),
         'middleware' => ['api'],
     ],
+
+
+    /* Available Languages */
+    'languages' => [
+        'en' => 'EN',
+        'mt' => 'MT',
+    ],
 ];
