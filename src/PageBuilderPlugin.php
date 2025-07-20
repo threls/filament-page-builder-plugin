@@ -2,6 +2,7 @@
 
 namespace Threls\FilamentPageBuilder;
 
+use CactusGalaxy\FilamentAstrotomic\FilamentAstrotomicTranslatablePlugin;
 use Filament\Contracts\Plugin;
 use Filament\Panel;
 
@@ -17,6 +18,9 @@ class PageBuilderPlugin implements Plugin
         $panel
             ->resources([
                 Resources\PageResource::class,
+            ])
+            ->plugins([
+                FilamentAstrotomicTranslatablePlugin::make(),
             ]);
     }
 
