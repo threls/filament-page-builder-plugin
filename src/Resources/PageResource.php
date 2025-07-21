@@ -131,6 +131,11 @@ class PageResource extends Resource
         return false;
     }
 
+    public static function canCreate(): bool
+    {
+        return config('filament-page-builder.permissions.can_create', true);
+    }
+
 
     public static function getFormSchema(): array
     {

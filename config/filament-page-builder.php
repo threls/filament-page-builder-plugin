@@ -70,4 +70,8 @@ return [
         'en' => 'EN',
         'mt' => 'MT',
     ],
+    
+    'permissions' => [
+        'can_create' => env('FILAMENT_PAGE_BUILDER_CAN_CREATE', true),
+    ],
 ];
