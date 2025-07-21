@@ -2,6 +2,10 @@
 
 All notable changes to `filament-page-builder` will be documented in this file.
 
+## 2.3.8-beta - 2025-07-21
+
+Add config permission to create pages.
+
 ## 2.3.3-beta - 2025-07-20
 
 ### What's Changed
