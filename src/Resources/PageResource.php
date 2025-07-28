@@ -167,6 +167,7 @@ class PageResource extends Resource
                                 ->generateUuidUsing(false)
                                 ->reorderableWithDragAndDrop(false)
                                 ->reorderableWithButtons()
+                                ->addBetweenAction(fn (\Filament\Forms\Components\Actions\Action $action) => $action->hidden())
                                 ->blocks([
                                     Block::make(PageLayoutTypesEnum::HERO_SECTION->value)
                                         ->schema([
