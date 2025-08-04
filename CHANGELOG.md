@@ -2,6 +2,10 @@
 
 All notable changes to `filament-page-builder` will be documented in this file.
 
+## 2.4.0-beta - 2025-08-04
+
+permanently disable page sections
+
 ## 2.3.8-beta - 2025-07-21
 
 Add config permission to create pages.
