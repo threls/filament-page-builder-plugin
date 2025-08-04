@@ -210,43 +210,43 @@ class PageResource extends Resource
                                             TextInput::make('button-path'),
                                         ]),
 
-                                    Block::make(PageLayoutTypesEnum::IMAGE_CARDS->value)
-                                        ->schema([
-                                            TextInput::make('title')->nullable(),
-                                            Repeater::make('group')->schema([
-                                                TextInput::make('text'),
-                                                FileUpload::make('image')
-                                                    ->directory('page-builder')
-                                                    ->panelLayout('grid')
-                                                    ->image()
-                                                    ->required($tab->isMainLocale())
-                                                    ->disk(config('filament-page-builder.disk')),
-                                                TextInput::make('button-text'),
-                                                TextInput::make('button-path'),
-                                            ]),
-                                        ]),
+                                    // Block::make(PageLayoutTypesEnum::IMAGE_CARDS->value)
+                                    //     ->schema([
+                                    //         TextInput::make('title')->nullable(),
+                                    //         Repeater::make('group')->schema([
+                                    //             TextInput::make('text'),
+                                    //             FileUpload::make('image')
+                                    //                 ->directory('page-builder')
+                                    //                 ->panelLayout('grid')
+                                    //                 ->image()
+                                    //                 ->required($tab->isMainLocale())
+                                    //                 ->disk(config('filament-page-builder.disk')),
+                                    //             TextInput::make('button-text'),
+                                    //             TextInput::make('button-path'),
+                                    //         ]),
+                                    //     ]),
 
-                                    Block::make(PageLayoutTypesEnum::HORIZONTAL_TICKER->value)
-                                        ->schema([
-                                            TextInput::make('title')->nullable(),
-                                            Repeater::make('group')
-                                                ->schema([
-                                                    TextInput::make('title')
-                                                        ->required($tab->isMainLocale()),
-                                                    Textarea::make('description')
-                                                        ->nullable(),
-
-                                                    FileUpload::make('images')
-                                                        ->panelLayout('grid')
-                                                        ->directory('page-builder')
-                                                        ->multiple()
-                                                        ->reorderable()
-                                                        ->image()
-                                                        ->required($tab->isMainLocale())
-                                                        ->disk(config('filament-page-builder.disk')),
-                                                ])
-                                                ->columns(),
-                                        ]),
+                                    // Block::make(PageLayoutTypesEnum::HORIZONTAL_TICKER->value)
+                                    //     ->schema([
+                                    //         TextInput::make('title')->nullable(),
+                                    //         Repeater::make('group')
+                                    //             ->schema([
+                                    //                 TextInput::make('title')
+                                    //                     ->required($tab->isMainLocale()),
+                                    //                 Textarea::make('description')
+                                    //                     ->nullable(),
+                                    //
+                                    //                 FileUpload::make('images')
+                                    //                     ->panelLayout('grid')
+                                    //                     ->directory('page-builder')
+                                    //                     ->multiple()
+                                    //                     ->reorderable()
+                                    //                     ->image()
+                                    //                     ->required($tab->isMainLocale())
+                                    //                     ->disk(config('filament-page-builder.disk')),
+                                    //             ])
+                                    //             ->columns(),
+                                    //     ]),
 
                                     Block::make(PageLayoutTypesEnum::BANNER->value)
                                         ->schema([
@@ -346,14 +346,14 @@ class PageResource extends Resource
                                                 ])->columns(),
                                         ]),
 
-                                    Block::make(PageLayoutTypesEnum::MAP_LOCATION->value)
-                                        ->schema([
-                                            TextInput::make('title')
-                                                ->required($tab->isMainLocale()),
-                                            TextInput::make('latitude')->required(),
-                                            TextInput::make('longitude')->required(),
-                                            TextInput::make('address'),
-                                        ]),
+                                    // Block::make(PageLayoutTypesEnum::MAP_LOCATION->value)
+                                    //     ->schema([
+                                    //         TextInput::make('title')
+                                    //             ->required($tab->isMainLocale()),
+                                    //         TextInput::make('latitude')->required(),
+                                    //         TextInput::make('longitude')->required(),
+                                    //         TextInput::make('address'),
+                                    //     ]),
 
                                     Block::make(PageLayoutTypesEnum::RELATIONSHIP_CONTENT->value)
                                         ->schema([
