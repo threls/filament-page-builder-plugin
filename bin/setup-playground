@@ -1,0 +1,49 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+PLAYGROUND_DIR="$ROOT_DIR/playground"
+
+if [[ ! -d "$PLAYGROUND_DIR" ]]; then
+  echo "Playground directory not found at $PLAYGROUND_DIR"
+  exit 1
+fi
+
+cd "$PLAYGROUND_DIR"
+
+echo "[1/6] Ensuring .env exists and configured for MySQL..."
+if [[ ! -f .env ]]; then
+  cp .env.example .env
+fi
+# macOS and Linux compatible sed in-place
+if sed --version >/dev/null 2>&1; then
+  SED_I=(sed -i)
+else
+  SED_I=(sed -i '')
+fi
+"${SED_I[@]}" 's/^DB_CONNECTION=.*/DB_CONNECTION=mysql/' .env || true
+"${SED_I[@]}" 's/^DB_HOST=.*/DB_HOST=127.0.0.1/' .env || true
+"${SED_I[@]}" 's/^DB_PORT=.*/DB_PORT=3306/' .env || true
+"${SED_I[@]}" 's/^DB_DATABASE=.*/DB_DATABASE=filament_playground/' .env || true
+"${SED_I[@]}" 's/^DB_USERNAME=.*/DB_USERNAME=root/' .env || true
+"${SED_I[@]}" 's/^DB_PASSWORD=.*/DB_PASSWORD=/' .env || true
+
+echo "[2/6] Installing Composer dependencies..."
+composer update -n --ansi
+
+echo "[3/6] Generating app key..."
+php artisan key:generate --ansi || true
+
+echo "[4/6] Publishing plugin config and migrations..."
+php artisan vendor:publish --provider="Threls\\FilamentPageBuilder\\PageBuilderServiceProvider" --tag="filament-page-builder-config" --force || true
+php artisan vendor:publish --provider="Threls\\FilamentPageBuilder\\PageBuilderServiceProvider" --tag="filament-page-builder-migrations" --force || true
+
+echo "[5/6] Running database migrations..."
+php artisan migrate --force --ansi
+
+echo "[6/6] Seeding demo data (admin user + demo pages)..."
+php artisan db:seed --force --ansi
+
+echo "\nSetup complete!"
+echo "- Login at /admin with: admin@example.com / password"
+echo "- API endpoint: GET /api/pages"
