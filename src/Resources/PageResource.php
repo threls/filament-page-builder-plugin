@@ -12,18 +12,14 @@ use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
-use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Form;
 use Filament\Forms\Set;
 use Filament\Resources\Resource;
 use Filament\Tables\Actions\Action;
-use Filament\Tables\Actions\BulkActionGroup;
-use Filament\Tables\Actions\DeleteAction;
-use Filament\Tables\Actions\DeleteBulkAction;
+ use Filament\Tables\Actions\ActionGroup;
+ use Filament\Tables\Actions\DeleteAction;
 use Filament\Tables\Actions\EditAction;
-use Filament\Tables\Actions\ForceDeleteBulkAction;
-use Filament\Tables\Actions\RestoreBulkAction;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\TrashedFilter;
 use Filament\Tables\Table;
@@ -102,17 +98,30 @@ class PageResource extends Resource
             ])
             ->actions([
                 EditAction::make()->color('info'),
-                Action::make('publish')
-                    ->icon('heroicon-s-check')
-                    ->color('success')
-                    ->requiresConfirmation()
-                    ->action(fn(Page $record) => $record->update(['status' => PageStatusEnum::PUBLISHED])),
-                Action::make('archive')
-                    ->icon('heroicon-s-archive-box-arrow-down')
-                    ->color('warning')
-                    ->requiresConfirmation()
-                    ->action(fn(Page $record) => $record->update(['status' => PageStatusEnum::ARCHIVED])),
-                DeleteAction::make()->disabled(),
+                ActionGroup::make([
+                    Action::make('publish')
+                        ->label(fn(Page $record) => $record->status === PageStatusEnum::PUBLISHED ? 'Unpublish' : 'Publish')
+                        ->icon(fn(Page $record) => $record->status === PageStatusEnum::PUBLISHED ? 'heroicon-s-x-mark' : 'heroicon-s-check')
+                        ->color(fn(Page $record) => $record->status === PageStatusEnum::PUBLISHED ? 'gray' : 'success')
+                        ->visible(fn() => static::canCreate())
+                        ->requiresConfirmation()
+                        ->action(function (Page $record) {
+                            $record->update([
+                                'status' => $record->status === PageStatusEnum::PUBLISHED
+                                    ? PageStatusEnum::DRAFT
+                                    : PageStatusEnum::PUBLISHED,
+                            ]);
+                        }),
+                    Action::make('archive')
+                        ->icon('heroicon-s-archive-box-arrow-down')
+                        ->color('warning')
+                        ->visible(fn(Page $record) => static::canDelete($record))
+                        ->requiresConfirmation()
+                        ->action(fn(Page $record) => $record->update(['status' => PageStatusEnum::ARCHIVED])),
+                    DeleteAction::make()
+                        ->requiresConfirmation()
+                        ->action(fn(Page $record) => $record->update(['status' => PageStatusEnum::ARCHIVED])),
+                ]),
             ]);
     }
 
@@ -128,7 +137,7 @@ class PageResource extends Resource
 
     public static function canDelete(Model $record): bool
     {
-        return false;
+        return config('filament-page-builder.permissions.can_delete', true);
     }
 
     public static function canCreate(): bool
@@ -148,14 +157,34 @@ class PageResource extends Resource
 
             TextInput::make('slug')
                 ->required()
+                ->disabled()
                 ->readOnly(),
 
             Select::make('status')
                 ->label('Status')
                 ->default(PageStatusEnum::DRAFT->value)
-                ->options(collect(PageStatusEnum::cases())->mapWithKeys(fn($case) => [
-                    $case->value => $case->name,
-                ]))->required(),
+                ->options(function (?Page $record) {
+                    return collect(PageStatusEnum::cases())
+                        ->mapWithKeys(fn($case) => [
+                            $case->value => Str::title($case->name),
+                        ])->toArray();
+                })
+                ->disableOptionWhen(function (?Page $record, string $value): bool {
+                    if (! $record || $record->status !== PageStatusEnum::PUBLISHED) {
+                        return false;
+                    }
+
+                    if ($value === PageStatusEnum::ARCHIVED->value && ! static::canDelete($record)) {
+                        return true;
+                    }
+
+                    if ($value === PageStatusEnum::DRAFT->value && ! static::canCreate()) {
+                        return true;
+                    }
+
+                    return false;
+                })
+                ->required(),
 
 
             Section::make('Page builder')
@@ -280,6 +309,7 @@ class PageResource extends Resource
                                             RichEditor::make('content')
                                                 ->required($tab->isMainLocale()),
                                         ]),
+
                                     Block::make(PageLayoutTypesEnum::IMAGE_AND_RICH_TEXT->value)
                                         ->schema([
                                             Select::make('variant')
