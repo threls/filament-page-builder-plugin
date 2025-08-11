@@ -104,13 +104,7 @@ class PageLayoutResource extends Resource
                                     ->placeholder('e.g., left, main, sidebar')
                                     ->live(onBlur: true)
                                     ->nullable(),
-                                KeyValue::make('settings')
-                                    ->label('Column settings')
-                                    ->keyLabel('Setting')
-                                    ->valueLabel('Value')
-                                    ->reorderable()
-                                    ->addButtonLabel('Add setting')
-                                    ->nullable(),
+                                BreakpointFields::numberFlexible('Weight', 'weight', '')->statePath('settings'),
                             ])
                             ->columnSpanFull(),
                     ]),

@@ -40,6 +40,21 @@ class CreatePageLayout extends CreateRecord
 
         $data['settings'] = $settings;
 
+        // Normalize per-column settings
+        if (!empty($data['columns']) && is_array($data['columns'])) {
+            foreach ($data['columns'] as &$column) {
+                $colSettings = $column['settings'] ?? [];
+                SettingsNormalizer::normalizeFlexibleNumeric($colSettings, 'weight');
+                // remove empty settings to keep payload clean
+                if ($colSettings === []) {
+                    unset($column['settings']);
+                } else {
+                    $column['settings'] = $colSettings;
+                }
+            }
+            unset($column); // break reference
+        }
+
         return $data;
     }
 
