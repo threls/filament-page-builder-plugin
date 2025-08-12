@@ -85,7 +85,8 @@ class PageLayoutResource extends Resource
                         Repeater::make('columns')
                             ->relationship('columns')
                             ->hiddenLabel()
-                            ->reorderable('index')
+                            ->reorderable()
+                            ->orderColumn('index')
                             ->collapsible()
                             ->itemLabel(function (array $state, $component): string {
                                 $keys = array_keys($component->getState());
@@ -97,7 +98,6 @@ class PageLayoutResource extends Resource
                             ->minItems(1)
                             ->maxItems(6)
                             ->schema([
-                                Hidden::make('index'),
                                 TextInput::make('key')
                                     ->label('Key (optional)')
                                     ->maxLength(255)

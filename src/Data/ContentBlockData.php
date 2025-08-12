@@ -11,22 +11,42 @@ class ContentBlockData extends Data
         public string $type,
         public HeroSectionData|ImageGalleryData|HorizontalTickerData|
         BannerData|RichTextPageData|KeyValueSectionData|MapLocationData|
-        ImageCardData|RelationshipData|VideoEmbedderData|DividerData|ImageAndRichTextData $data,
+        ImageCardData|RelationshipData|VideoEmbedderData|DividerData|ImageAndRichTextData|LayoutSectionData $data,
+        public ?string $column = null,
     )
     {
     }
 
     public static function fromArray(array $content): self
     {
+        $type = $content['type'] ?? '';
+        $data = $content['data'] ?? [];
+
+        if (is_string($type) && str_starts_with($type, 'layout_section:')) {
+            $parts = explode(':', $type, 2);
+            $layoutIdFromType = isset($parts[1]) ? (int) $parts[1] : null;
+            if ($layoutIdFromType && (! isset($data['layout_id']) || empty($data['layout_id']))) {
+                $data['layout_id'] = $layoutIdFromType;
+            }
+            $content['type'] = 'layout_section';
+        }
+
+        $column = is_array($data) ? ($data['column'] ?? null) : null;
+        if (is_array($data) && array_key_exists('column', $data)) {
+            unset($data['column']);
+        }
+
         return new self(
             type: $content['type'],
-            data: self::returnData($content['type'], $content['data']),
+            data: self::returnData($content['type'], $data),
+            column: $column,
         );
     }
 
     protected static function returnData(string $type, mixed $data)
     {
         return match ($type) {
+            'layout_section' => LayoutSectionData::fromArray($data),
             PageLayoutTypesEnum::HERO_SECTION->value => HeroSectionData::fromArray($data),
             PageLayoutTypesEnum::IMAGE_GALLERY->value => ImageGalleryData::fromArray($data),
 //            PageLayoutTypesEnum::HORIZONTAL_TICKER->value => HorizontalTickerData::fromArray($data),
