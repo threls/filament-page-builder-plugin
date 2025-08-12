@@ -18,6 +18,7 @@ class PageBuilderPlugin implements Plugin
         $panel
             ->resources([
                 Resources\PageResource::class,
+                Resources\PageLayoutResource::class,
             ])
             ->plugins([
                 FilamentAstrotomicTranslatablePlugin::make(),

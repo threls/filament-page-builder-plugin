@@ -22,6 +22,8 @@ class PageBuilderServiceProvider extends PackageServiceProvider
             ->hasMigrations([
                 'create_pages_table',
                 'create_page_translations_table',
+                'create_page_layouts_table',
+                'create_page_layout_columns_table',
             ])
             ->publishesServiceProvider(TranslatableServiceProvider::class)
         ;

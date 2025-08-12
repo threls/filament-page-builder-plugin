@@ -163,6 +163,54 @@ You can configure the API in the config file:
 - Filament 3.2 or higher
 - Spatie Laravel Query Builder 6.3 or higher (for API functionality)
 
+## Playground (In-Repo Example App)
+
+A full Laravel app is available at `./playground` for live development and testing via a Composer path repository. Changes to the plugin code are reflected immediately in the playground.
+
+### Quick Start
+
+1) Requirements
+   - MySQL running locally
+   - Update `playground/.env` DB credentials if needed (defaults: DB_DATABASE=filament_playground, DB_USERNAME=root, DB_PASSWORD=)
+
+2) Setup
+   - Run the setup script:
+     ```bash
+     ./bin/setup-playground
+     ```
+     This will install dependencies, publish the plugin config and migrations, run migrations, and seed demo data (including an admin user).
+
+3) Use
+   - Start the app from the `playground` directory:
+     ```bash
+     php artisan serve
+     ```
+   - Admin Panel: http://localhost:8000/admin
+     - Login: admin@example.com
+     - Password: password
+   - API Endpoint: http://localhost:8000/api/pages
+
+### Developer Workflow
+- The playground consumes this plugin via a Composer path repository (`"url": "../"`), so code edits in `src/` are reflected without re-install.
+- If you change service providers, config, or migrations, re-run the setup steps as needed:
+  ```bash
+  php artisan vendor:publish --provider="Threls\\FilamentPageBuilder\\PageBuilderServiceProvider" --tag="filament-page-builder-config" --force
+  php artisan vendor:publish --provider="Threls\\FilamentPageBuilder\\PageBuilderServiceProvider" --tag="filament-page-builder-migrations" --force
+  php artisan migrate --force
+  php artisan db:seed --force
+  ```
+- To reset demo data during development, you can truncate the pages tables or create additional seeders tailored to your needs.
+
+### Troubleshooting
+- If the panel isn’t accessible, ensure the provider is registered in `playground/bootstrap/providers.php`:
+  ```php
+  return [
+      App\Providers\AppServiceProvider::class,
+      App\Providers\Filament\AdminPanelProvider::class,
+  ];
+  ```
+- If publishing fails, confirm the plugin service provider class name and tags match your local code.
+- Ensure MySQL credentials in `playground/.env` are correct and the database exists.
 
 ## Changelog
 
