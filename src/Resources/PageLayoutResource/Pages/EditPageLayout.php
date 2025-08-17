@@ -16,37 +16,14 @@ class EditPageLayout extends EditRecord
         // Columns indexing/count
         $data = SettingsNormalizer::assignColumns($data);
 
-        // Settings normalization (handled here so the utility stays generic)
-        $settings = $data['settings'] ?? [];
-
-        SettingsNormalizer::normalizeFlexibleNumeric($settings, 'gap-x');
-
-        SettingsNormalizer::normalizeFlexibleNumeric($settings, 'gap-y');
-
-        SettingsNormalizer::normalizeFlexibleString($settings, 'flex-direction');
-
-        SettingsNormalizer::normalizeFlexibleString($settings, 'flex-wrap');
-
-        // Clean simple scalars
-        if (isset($settings['flex-wrap']) && ($settings['flex-wrap'] === null || $settings['flex-wrap'] === '')) {
-            unset($settings['flex-wrap']);
-        }
-        if (isset($settings['width']) && ($settings['width'] === null || $settings['width'] === '')) {
-            unset($settings['width']);
-        }
-
-        $data['settings'] = $settings;
+        // Centralized normalization to { key: { bp: value } }
+        $data['settings'] = SettingsNormalizer::normalizeLayoutSettings($data['settings'] ?? []);
 
         // Normalize per-column settings
         if (!empty($data['columns']) && is_array($data['columns'])) {
             foreach ($data['columns'] as &$column) {
-                $colSettings = $column['settings'] ?? [];
-                SettingsNormalizer::normalizeFlexibleNumeric($colSettings, 'weight');
-                if ($colSettings === []) {
-                    unset($column['settings']);
-                } else {
-                    $column['settings'] = $colSettings;
-                }
+                $colSettings = SettingsNormalizer::normalizeColumnSettings($column['settings'] ?? []);
+                if ($colSettings === []) unset($column['settings']); else $column['settings'] = $colSettings;
             }
             unset($column); // break reference
         }

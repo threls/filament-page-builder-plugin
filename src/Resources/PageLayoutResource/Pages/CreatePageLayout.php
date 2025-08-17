@@ -16,41 +16,14 @@ class CreatePageLayout extends CreateRecord
         // Columns indexing/count
         $data = SettingsNormalizer::assignColumns($data);
 
-        // Settings normalization (handled here so the utility stays generic)
-        $settings = $data['settings'] ?? [];
-
-        // Map-based normalization keeps this page in control of field names
-        $flexibleNumeric = ['gap-x', 'gap-y'];
-        foreach ($flexibleNumeric as $key) {
-            SettingsNormalizer::normalizeFlexibleNumeric($settings, $key);
-        }
-
-        $flexibleString = ['flex-direction', 'flex-wrap'];
-        foreach ($flexibleString as $key) {
-            SettingsNormalizer::normalizeFlexibleString($settings, $key);
-        }
-
-        // Clean simple scalars (in case some fields come as single values)
-        $scalarClean = ['width', 'flex-wrap'];
-        foreach ($scalarClean as $key) {
-            if (isset($settings[$key]) && ($settings[$key] === null || $settings[$key] === '')) {
-                unset($settings[$key]);
-            }
-        }
-
-        $data['settings'] = $settings;
+        // Centralized normalization to { key: { bp: value } }
+        $data['settings'] = SettingsNormalizer::normalizeLayoutSettings($data['settings'] ?? []);
 
         // Normalize per-column settings
         if (!empty($data['columns']) && is_array($data['columns'])) {
             foreach ($data['columns'] as &$column) {
-                $colSettings = $column['settings'] ?? [];
-                SettingsNormalizer::normalizeFlexibleNumeric($colSettings, 'weight');
-                // remove empty settings to keep payload clean
-                if ($colSettings === []) {
-                    unset($column['settings']);
-                } else {
-                    $column['settings'] = $colSettings;
-                }
+                $colSettings = SettingsNormalizer::normalizeColumnSettings($column['settings'] ?? []);
+                if ($colSettings === []) unset($column['settings']); else $column['settings'] = $colSettings;
             }
             unset($column); // break reference
         }

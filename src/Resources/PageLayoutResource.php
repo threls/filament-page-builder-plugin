@@ -3,9 +3,8 @@
 namespace Threls\FilamentPageBuilder\Resources;
 
 use Filament\Forms;
+use Illuminate\Database\Eloquent\Builder as EloquentBuilder;
 use Filament\Forms\Components\Hidden;
-use Filament\Forms\Components\KeyValue;
-use Filament\Forms\Components\Fieldset;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
@@ -104,11 +103,16 @@ class PageLayoutResource extends Resource
                                     ->placeholder('e.g., left, main, sidebar')
                                     ->live(onBlur: true)
                                     ->nullable(),
-                                BreakpointFields::numberFlexible('Weight', 'weight', '')->statePath('settings'),
+                                BreakpointFields::numberFlexible('Weight', 'settings.weight', ''),
                             ])
                             ->columnSpanFull(),
                     ]),
             ]);
+    }
+
+    public static function getEloquentQuery(): EloquentBuilder
+    {
+        return parent::getEloquentQuery()->withCount('columns');
     }
 
     public static function table(Table $table): Table

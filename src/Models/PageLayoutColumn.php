@@ -4,6 +4,7 @@ namespace Threls\FilamentPageBuilder\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Threls\FilamentPageBuilder\Support\SettingsNormalizer;
 
 class PageLayoutColumn extends Model
 {
@@ -14,6 +15,15 @@ class PageLayoutColumn extends Model
         return [
             'settings' => 'array',
         ];
+    }
+
+    protected static function booted(): void
+    {
+        static::saving(function (PageLayoutColumn $column) {
+            if (is_array($column->settings)) {
+                $column->settings = SettingsNormalizer::normalizeColumnSettings($column->settings);
+            }
+        });
     }
 
     public function layout(): BelongsTo

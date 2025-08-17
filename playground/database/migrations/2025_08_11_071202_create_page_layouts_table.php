@@ -12,7 +12,6 @@ return new class extends Migration
             $table->id();
             $table->string('name');
             $table->string('key')->unique();
-            $table->unsignedInteger('columns_count')->default(1);
             $table->json('settings')->nullable(); // e.g., gaps, responsive flex directions, defaults
             $table->boolean('is_active')->default(true);
             $table->timestamps();

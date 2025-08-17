@@ -160,7 +160,6 @@ class PageResource extends Resource
 
             TextInput::make('slug')
                 ->required()
-                ->disabled()
                 ->readOnly(),
 
             Select::make('status')
@@ -258,7 +257,7 @@ class PageResource extends Resource
                                                 $itemsOut = [];
                                                 foreach ($columnsMap as $colKey => $list) {
                                                     if (! is_array($list) || empty($list)) { continue; }
-                                                    $first = $list[0];
+                                                    $first = array_values($list)[0] ?? null;
                                                     if (! is_array($first)) { continue; }
                                                     $first['data'] = $first['data'] ?? [];
                                                     $first['data']['column'] = (string) $colKey;

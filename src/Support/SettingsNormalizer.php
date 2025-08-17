@@ -5,7 +5,7 @@ namespace Threls\FilamentPageBuilder\Support;
 class SettingsNormalizer
 {
     /**
-     * Assign 1-based index to each column and sync columns_count from repeater length.
+     * Assign 1-based index to each column.
      */
     public static function assignColumns(array $data): array
     {
@@ -14,7 +14,6 @@ class SettingsNormalizer
             $columns[$i]['index'] = $i + 1;
         }
         $data['columns'] = $columns;
-        $data['columns_count'] = count($columns);
         return $data;
     }
 
@@ -89,5 +88,41 @@ class SettingsNormalizer
         } else {
             $settings[$fieldName] = $normalized;
         }
+    }
+
+    /**
+     * Normalize all layout-level settings to the { key: { bp: value } } convention.
+     */
+    public static function normalizeLayoutSettings(array $settings): array
+    {
+        // Numeric breakpoint maps
+        self::normalizeFlexibleNumeric($settings, 'gap-x');
+        self::normalizeFlexibleNumeric($settings, 'gap-y');
+
+        // String breakpoint maps
+        self::normalizeFlexibleString($settings, 'flex-direction');
+        self::normalizeFlexibleString($settings, 'flex-wrap');
+
+        // Clean simple scalars that may be empty
+        foreach (['width', 'flex-wrap'] as $key) {
+            if (isset($settings[$key]) && ($settings[$key] === null || $settings[$key] === '')) {
+                unset($settings[$key]);
+            }
+        }
+
+        return $settings;
+    }
+
+    /**
+     * Normalize per-column settings to the { key: { bp: value } } convention.
+     */
+    public static function normalizeColumnSettings(array $settings): array
+    {
+        self::normalizeFlexibleNumeric($settings, 'weight');
+        // Remove empty settings map
+        if ($settings === []) {
+            return [];
+        }
+        return $settings;
     }
 }

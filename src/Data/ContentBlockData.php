@@ -13,6 +13,7 @@ class ContentBlockData extends Data
         BannerData|RichTextPageData|KeyValueSectionData|MapLocationData|
         ImageCardData|RelationshipData|VideoEmbedderData|DividerData|ImageAndRichTextData|LayoutSectionData $data,
         public ?string $column = null,
+        public ?array $settings = null,
     )
     {
     }
@@ -40,6 +41,7 @@ class ContentBlockData extends Data
             type: $content['type'],
             data: self::returnData($content['type'], $data),
             column: $column,
+            settings: $column['settings'] ?? [],
         );
     }
 
