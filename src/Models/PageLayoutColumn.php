@@ -24,15 +24,7 @@ class PageLayoutColumn extends Model
                 $column->settings = SettingsNormalizer::normalizeColumnSettings($column->settings);
             }
         });
-    }
 
-    public function layout(): BelongsTo
-    {
-        return $this->belongsTo(PageLayout::class, 'page_layout_id');
-    }
-
-    protected static function booted(): void
-    {
         static::creating(function (PageLayoutColumn $column) {
             if (is_null($column->index)) {
                 $max = static::where('page_layout_id', $column->page_layout_id)->max('index');
@@ -40,4 +32,11 @@ class PageLayoutColumn extends Model
             }
         });
     }
+
+    public function layout(): BelongsTo
+    {
+        return $this->belongsTo(PageLayout::class, 'page_layout_id');
+    }
+
+    
 }

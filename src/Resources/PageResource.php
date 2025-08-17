@@ -203,36 +203,38 @@ class PageResource extends Resource
                                     if (! is_array($state)) {
                                         return $state;
                                     }
-                                    foreach ($state as &$item) {
-                                        if (is_array($item) && ($item['type'] ?? null) === 'layout_section') {
-                                            $layoutId = $item['data']['layout_id'] ?? null;
+                                    foreach ($state as &$section) {
+                                        if (is_array($section) && ($section['type'] ?? null) === 'layout_section') {
+                                            $layoutId = $section['data']['layout_id'] ?? null;
                                             if ($layoutId) {
-                                                $item['type'] = 'layout_section:' . $layoutId;
+                                                // UI convenience: include layout id in type while editing
+                                                $section['type'] = 'layout_section:' . $layoutId;
                                             }
-                                            // Convert legacy items with explicit column into per-column slots
-                                            $items = $item['data']['items'] ?? null;
-                                            if (is_array($items)) {
-                                                $columnsMap = [];
-                                                $layout = \Threls\FilamentPageBuilder\Models\PageLayout::with('columns')->find($layoutId);
-                                                if ($layout) {
-                                                    foreach ($layout->columns as $col) {
-                                                        $key = $col->key ?: (string) $col->index;
-                                                        $columnsMap[$key] = [];
+                                            $layout = $layoutId ? PageLayout::with('columns')->find($layoutId) : null;
+
+                                            // Normalize columns to a map keyed by immutable layout column ID (as string).
+                                            $normalized = [];
+                                            if ($layout) {
+                                                $persisted = $section['data']['columns'] ?? [];
+                                                $byId = [];
+                                                $byKey = [];
+                                                if (is_array($persisted)) {
+                                                    foreach ($persisted as $k => $v) {
+                                                        $val = is_array($v) ? array_values($v) : [];
+                                                        if (is_string($k) && ctype_digit($k)) {
+                                                            $byId[$k] = $val;
+                                                        } else {
+                                                            $byKey[(string) $k] = $val;
+                                                        }
                                                     }
                                                 }
-                                                foreach ($items as $child) {
-                                                    if (! is_array($child)) { continue; }
-                                                    $colKey = $child['data']['column'] ?? null;
-                                                    if ($colKey !== null) {
-                                                        unset($child['data']['column']);
-                                                        $columnsMap[(string) $colKey] = [$child];
-                                                    }
-                                                }
-                                                if (! empty($columnsMap)) {
-                                                    $item['data']['columns'] = $columnsMap;
-                                                    unset($item['data']['items']);
+                                                foreach ($layout->columns as $col) {
+                                                    $idStr = (string) $col->id;
+                                                    $keyStr = $col->key ?: null;
+                                                    $normalized[$idStr] = $byId[$idStr] ?? ($keyStr !== null ? ($byKey[$keyStr] ?? []) : []);
                                                 }
                                             }
+                                            $section['data']['columns'] = $normalized;
                                         }
                                     }
                                     return $state;
@@ -241,32 +243,49 @@ class PageResource extends Resource
                                     if (! is_array($state)) {
                                         return $state;
                                     }
-                                    foreach ($state as &$item) {
-                                        if (! is_array($item)) { continue; }
-                                        $type = $item['type'] ?? '';
-                                        if (is_string($type) && str_starts_with($type, 'layout_section:')) {
+                                    foreach ($state as &$section) {
+                                        if (! is_array($section)) { continue; }
+
+                                        $type = $section['type'] ?? '';
+                                        if ($type === 'layout_section' || (is_string($type) && str_starts_with($type, 'layout_section:'))) {
+                                            // Layout section
                                             $parts = explode(':', $type, 2);
                                             $layoutIdFromType = isset($parts[1]) ? (int) $parts[1] : null;
-                                            $item['type'] = 'layout_section';
+                                            $section['type'] = 'layout_section';
+
                                             if ($layoutIdFromType) {
-                                                $item['data']['layout_id'] = $item['data']['layout_id'] ?? $layoutIdFromType;
+                                                $section['data']['layout_id'] = $section['data']['layout_id'] ?? $layoutIdFromType;
                                             }
-                                            // Convert per-column slots back into items with implicit column
-                                            $columnsMap = $item['data']['columns'] ?? null;
-                                            if (is_array($columnsMap)) {
-                                                $itemsOut = [];
-                                                foreach ($columnsMap as $colKey => $list) {
-                                                    if (! is_array($list) || empty($list)) { continue; }
-                                                    $first = array_values($list)[0] ?? null;
-                                                    if (! is_array($first)) { continue; }
-                                                    $first['data'] = $first['data'] ?? [];
-                                                    $first['data']['column'] = (string) $colKey;
-                                                    $itemsOut[] = $first;
+                                            // Canonicalize persisted shape: keep only layout_id and columns (array ordered by index)
+                                            $layoutId = $section['data']['layout_id'] ?? null;
+                                            $layout = $layoutId ? PageLayout::with('columns')->find($layoutId) : null;
+
+                                            $ordered = [];
+                                            if ($layout) {
+                                                // Read UI state directly from columns.{column_id} and persist as an id-keyed map
+                                                $uiColumns = $section['data']['columns'] ?? [];
+                                                foreach ($layout->columns as $col) {
+                                                    $idStr = (string) $col->id;
+                                                    $value = $uiColumns[$idStr] ?? [];
+                                                    $ordered[$idStr] = is_array($value) ? array_values($value) : [];
                                                 }
-                                                $item['data']['items'] = $itemsOut;
-                                                unset($item['data']['columns']);
+                                            } else {
+                                                // Fallback to a normalized list if layout not found
+                                                $ordered = [];
                                             }
+
+                                            // Build canonical data and strip stray keys
+                                            $canonical = [
+                                                'layout_id' => $layoutId,
+                                                'columns' => $ordered,
+                                            ];
+                                            if (isset($section['data']['settings'])) {
+                                                $canonical['settings'] = $section['data']['settings'];
+                                            }
+                                            $section['data'] = $canonical;
                                         }
+                                        // Ensure no stray items leak at root
+                                        if (isset($section['data']['items'])) unset($section['data']['items']);
                                     }
                                     return $state;
                                 })
@@ -279,16 +298,19 @@ class PageResource extends Resource
                                         // Persist the selected layout id in state (also inferred from type on dehydrate)
                                         $schema[] = Hidden::make('layout_id')->default($layout->id);
 
-                                        foreach ($layout->columns as $col) {
+                                        foreach ($layout->columns as $i => $col) {
                                             $key = $col->key ?: (string) $col->index;
-                                            $label = $col->name ?: ('Column ' . ($col->index + 1));
+                                            $label = $col->name ?: ('Column ' . ($col -> key ?? $col->index));
 
                                             $schema[] = Section::make($label)
                                                 ->schema([
-                                                    Builder::make('columns.' . $key)
+                                                    // Bind directly to the persisted columns map by column id
+                                                    Builder::make('columns.' . $col->id)
                                                         ->label('Component')
+                                                        ->hiddenLabel()
                                                         ->maxItems(1)
                                                         ->blocks([
+                                                        
                                                             Block::make(PageLayoutTypesEnum::HERO_SECTION->value)
                                                                 ->schema([
                                                                     TextInput::make('title')
