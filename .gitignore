@@ -20,3 +20,5 @@ playground/storage
 playground/bootstrap/cache
 playground/public/build
 playground/public/storage
+
+/playground
