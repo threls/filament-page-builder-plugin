@@ -7,6 +7,7 @@ use Spatie\LaravelData\Attributes\MapName;
 use Spatie\LaravelData\Data;
 use Spatie\LaravelData\Mappers\SnakeCaseMapper;
 use Threls\FilamentPageBuilder\Models\PageLayout;
+use Spatie\LaravelData\Optional;
 
 #[MapName(SnakeCaseMapper::class)]
 class LayoutSectionData extends Data
@@ -18,10 +19,9 @@ class LayoutSectionData extends Data
     public function __construct(
         public int $layout_id,
         public array $items,
-        public array $settings = [],
-        // Added: include layout & columns settings in API payloads
+        public array|Optional $settings = new Optional(),
+        // include layout settings in API payloads
         public array $layout_settings = [],
-        public array $columns = [],
     ) {}
 
 
@@ -67,6 +67,15 @@ class LayoutSectionData extends Data
                     }
                     $first = is_array($entry) ? (array_values($entry)[0] ?? null) : null;
                     if (is_array($first) && isset($first['type'])) {
+                        // attach column meta under each item
+                        $columnMeta = [
+                            'id' => $col->id,
+                            'key' => $col->key ?: (string) $col->index,
+                            'index' => $col->index,
+                            'settings' => is_array($col->settings) ? $col->settings : [],
+                        ];
+                        $first['data'] = is_array($first['data'] ?? null) ? $first['data'] : [];
+                        $first['data']['column'] = $columnMeta;
                         $items[] = ContentBlockData::fromArray($first);
                     } else {
                         $items[] = null; // include null placeholder when no content
@@ -78,9 +87,8 @@ class LayoutSectionData extends Data
         return new self(
             layout_id: $layoutId,
             items: $items,
-            settings: $settings,
+            settings: ! empty($settings) ? $settings : new Optional(),
             layout_settings: $layoutSettings,
-            columns: $columnsOut,
         );
     }
 }

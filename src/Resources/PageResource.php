@@ -7,33 +7,32 @@ use CactusGalaxy\FilamentAstrotomic\Resources\Concerns\ResourceTranslatable;
 use CactusGalaxy\FilamentAstrotomic\TranslatableTab;
 use Filament\Forms\Components\Builder;
 use Filament\Forms\Components\Builder\Block;
-use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\FileUpload;
-use Filament\Forms\Components\Repeater;
+use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\Toggle;
 use Filament\Forms\Form;
 use Filament\Forms\Set;
-use Filament\Forms\Get;
 use Filament\Resources\Resource;
 use Filament\Tables\Actions\Action;
- use Filament\Tables\Actions\ActionGroup;
- use Filament\Tables\Actions\DeleteAction;
+use Filament\Tables\Actions\ActionGroup;
+use Filament\Tables\Actions\DeleteAction;
 use Filament\Tables\Actions\EditAction;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\TrashedFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
-use Threls\FilamentPageBuilder\Enums\PageLayoutTypesEnum;
-use Threls\FilamentPageBuilder\Enums\PageGridStyleEnum;
-use Threls\FilamentPageBuilder\Enums\PageRelationshipTypeEnum;
+use Threls\FilamentPageBuilder\Enums\BlueprintFieldTypeEnum;
 use Threls\FilamentPageBuilder\Enums\PageStatusEnum;
-use Threls\FilamentPageBuilder\Enums\SectionLayoutTypeEnum;
+use Threls\FilamentPageBuilder\Models\BlueprintVersion;
 use Threls\FilamentPageBuilder\Models\Page;
 use Threls\FilamentPageBuilder\Models\PageLayout;
+use Threls\FilamentPageBuilder\Models\RelationshipType;
 use Threls\FilamentPageBuilder\Resources\PageResource\Pages\CreatePage;
 use Threls\FilamentPageBuilder\Resources\PageResource\Pages\EditPage;
 use Threls\FilamentPageBuilder\Resources\PageResource\Pages\ListPages;
@@ -76,12 +75,12 @@ class PageResource extends Resource
                     ->searchable(),
                 TextColumn::make('status')
                     ->badge()
-                    ->color(fn(PageStatusEnum $state): string => match ($state) {
+                    ->color(fn (PageStatusEnum $state): string => match ($state) {
                         PageStatusEnum::DRAFT => 'info',
                         PageStatusEnum::PUBLISHED => 'success',
                         PageStatusEnum::ARCHIVED => 'warning',
                     })
-                    ->formatStateUsing(fn(PageStatusEnum $state): string => $state->name)
+                    ->formatStateUsing(fn (PageStatusEnum $state): string => $state->name)
                     ->searchable(),
                 TextColumn::make('created_at')
                     ->dateTime()
@@ -103,10 +102,10 @@ class PageResource extends Resource
                 EditAction::make()->color('info'),
                 ActionGroup::make([
                     Action::make('publish')
-                        ->label(fn(Page $record) => $record->status === PageStatusEnum::PUBLISHED ? 'Unpublish' : 'Publish')
-                        ->icon(fn(Page $record) => $record->status === PageStatusEnum::PUBLISHED ? 'heroicon-s-x-mark' : 'heroicon-s-check')
-                        ->color(fn(Page $record) => $record->status === PageStatusEnum::PUBLISHED ? 'gray' : 'success')
-                        ->visible(fn() => static::canCreate())
+                        ->label(fn (Page $record) => $record->status === PageStatusEnum::PUBLISHED ? 'Unpublish' : 'Publish')
+                        ->icon(fn (Page $record) => $record->status === PageStatusEnum::PUBLISHED ? 'heroicon-s-x-mark' : 'heroicon-s-check')
+                        ->color(fn (Page $record) => $record->status === PageStatusEnum::PUBLISHED ? 'gray' : 'success')
+                        ->visible(fn () => static::canCreate())
                         ->requiresConfirmation()
                         ->action(function (Page $record) {
                             $record->update([
@@ -118,16 +117,15 @@ class PageResource extends Resource
                     Action::make('archive')
                         ->icon('heroicon-s-archive-box-arrow-down')
                         ->color('warning')
-                        ->visible(fn(Page $record) => static::canDelete($record))
+                        ->visible(fn (Page $record) => static::canDelete($record))
                         ->requiresConfirmation()
-                        ->action(fn(Page $record) => $record->update(['status' => PageStatusEnum::ARCHIVED])),
+                        ->action(fn (Page $record) => $record->update(['status' => PageStatusEnum::ARCHIVED])),
                     DeleteAction::make()
                         ->requiresConfirmation()
-                        ->action(fn(Page $record) => $record->update(['status' => PageStatusEnum::ARCHIVED])),
+                        ->action(fn (Page $record) => $record->update(['status' => PageStatusEnum::ARCHIVED])),
                 ]),
             ]);
     }
-
 
     public static function getPages(): array
     {
@@ -148,7 +146,6 @@ class PageResource extends Resource
         return config('filament-page-builder.permissions.can_create', true);
     }
 
-
     public static function getFormSchema(): array
     {
         return [
@@ -156,7 +153,7 @@ class PageResource extends Resource
                 ->required()
                 ->maxLength(255)
                 ->live(onBlur: true)
-                ->afterStateUpdated(fn(Set $set, ?string $state) => $set('slug', Str::slug($state))),
+                ->afterStateUpdated(fn (Set $set, ?string $state) => $set('slug', Str::slug($state))),
 
             TextInput::make('slug')
                 ->required()
@@ -167,7 +164,7 @@ class PageResource extends Resource
                 ->default(PageStatusEnum::DRAFT->value)
                 ->options(function (?Page $record) {
                     return collect(PageStatusEnum::cases())
-                        ->mapWithKeys(fn($case) => [
+                        ->mapWithKeys(fn ($case) => [
                             $case->value => Str::title($case->name),
                         ])->toArray();
                 })
@@ -188,119 +185,31 @@ class PageResource extends Resource
                 })
                 ->required(),
 
-
             Section::make('Page builder')
                 ->schema([
                     TranslatableTabs::make()
-                        ->localeTabSchema(fn(TranslatableTab $tab) => [
+                        ->localeTabSchema(fn (TranslatableTab $tab) => [
                             Builder::make($tab->makeName('content'))
-                                ->label('Content')
                                 ->hiddenLabel()
                                 ->generateUuidUsing(false)
-                                ->reorderableWithDragAndDrop(false)
+                                ->reorderableWithDragAndDrop(true)
                                 ->reorderableWithButtons()
-                                ->formatStateUsing(function ($state) {
-                                    if (! is_array($state)) {
-                                        return $state;
-                                    }
-                                    foreach ($state as &$section) {
-                                        if (is_array($section) && ($section['type'] ?? null) === 'layout_section') {
-                                            $layoutId = $section['data']['layout_id'] ?? null;
-                                            if ($layoutId) {
-                                                // UI convenience: include layout id in type while editing
-                                                $section['type'] = 'layout_section:' . $layoutId;
-                                            }
-                                            $layout = $layoutId ? PageLayout::with('columns')->find($layoutId) : null;
-
-                                            // Normalize columns to a map keyed by immutable layout column ID (as string).
-                                            $normalized = [];
-                                            if ($layout) {
-                                                $persisted = $section['data']['columns'] ?? [];
-                                                $byId = [];
-                                                $byKey = [];
-                                                if (is_array($persisted)) {
-                                                    foreach ($persisted as $k => $v) {
-                                                        $val = is_array($v) ? array_values($v) : [];
-                                                        if (is_string($k) && ctype_digit($k)) {
-                                                            $byId[$k] = $val;
-                                                        } else {
-                                                            $byKey[(string) $k] = $val;
-                                                        }
-                                                    }
-                                                }
-                                                foreach ($layout->columns as $col) {
-                                                    $idStr = (string) $col->id;
-                                                    $keyStr = $col->key ?: null;
-                                                    $normalized[$idStr] = $byId[$idStr] ?? ($keyStr !== null ? ($byKey[$keyStr] ?? []) : []);
-                                                }
-                                            }
-                                            $section['data']['columns'] = $normalized;
-                                        }
-                                    }
-                                    return $state;
-                                })
-                                ->dehydrateStateUsing(function ($state) {
-                                    if (! is_array($state)) {
-                                        return $state;
-                                    }
-                                    foreach ($state as &$section) {
-                                        if (! is_array($section)) { continue; }
-
-                                        $type = $section['type'] ?? '';
-                                        if ($type === 'layout_section' || (is_string($type) && str_starts_with($type, 'layout_section:'))) {
-                                            // Layout section
-                                            $parts = explode(':', $type, 2);
-                                            $layoutIdFromType = isset($parts[1]) ? (int) $parts[1] : null;
-                                            $section['type'] = 'layout_section';
-
-                                            if ($layoutIdFromType) {
-                                                $section['data']['layout_id'] = $section['data']['layout_id'] ?? $layoutIdFromType;
-                                            }
-                                            // Canonicalize persisted shape: keep only layout_id and columns (array ordered by index)
-                                            $layoutId = $section['data']['layout_id'] ?? null;
-                                            $layout = $layoutId ? PageLayout::with('columns')->find($layoutId) : null;
-
-                                            $ordered = [];
-                                            if ($layout) {
-                                                // Read UI state directly from columns.{column_id} and persist as an id-keyed map
-                                                $uiColumns = $section['data']['columns'] ?? [];
-                                                foreach ($layout->columns as $col) {
-                                                    $idStr = (string) $col->id;
-                                                    $value = $uiColumns[$idStr] ?? [];
-                                                    $ordered[$idStr] = is_array($value) ? array_values($value) : [];
-                                                }
-                                            } else {
-                                                // Fallback to a normalized list if layout not found
-                                                $ordered = [];
-                                            }
-
-                                            // Build canonical data and strip stray keys
-                                            $canonical = [
-                                                'layout_id' => $layoutId,
-                                                'columns' => $ordered,
-                                            ];
-                                            if (isset($section['data']['settings'])) {
-                                                $canonical['settings'] = $section['data']['settings'];
-                                            }
-                                            $section['data'] = $canonical;
-                                        }
-                                        // Ensure no stray items leak at root
-                                        if (isset($section['data']['items'])) unset($section['data']['items']);
-                                    }
-                                    return $state;
-                                })
+                                ->formatStateUsing(fn ($state) => static::formatBuilderStateForEdit($state))
+                                ->dehydrateStateUsing(fn ($state) => static::dehydrateBuilderStateForSave($state))
+                                ->blockNumbers(false)
                                 ->blocks(function () use ($tab) {
-                                    // Build available blocks dynamically from saved PageLayouts and their columns.
-                                    $layouts = PageLayout::with('columns')->get();
+                                    // Build available blocks and layouts only once per request for performance.
+                                    $availableBlocks = static::getAvailableBlocksForTab($tab);
+                                    $layouts = static::getAllLayoutsWithColumns();
                                     $blocks = [];
                                     foreach ($layouts as $layout) {
-                                        $schema = [];
-                                        // Persist the selected layout id in state (also inferred from type on dehydrate)
-                                        $schema[] = Hidden::make('layout_id')->default($layout->id);
+                                        $schema = [
+                                            // Persist the selected layout id in state (also inferred from type on dehydrate)
+                                            Hidden::make('layout_id')->default($layout->id),
+                                        ];
 
                                         foreach ($layout->columns as $i => $col) {
-                                            $key = $col->key ?: (string) $col->index;
-                                            $label = $col->name ?: ('Column ' . ($col -> key ?? $col->index));
+                                            $label = $col->name ?: ('Column ' . ($col->key ?? $col->index));
 
                                             $schema[] = Section::make($label)
                                                 ->schema([
@@ -309,156 +218,9 @@ class PageResource extends Resource
                                                         ->label('Component')
                                                         ->hiddenLabel()
                                                         ->maxItems(1)
-                                                        ->blocks([
-                                                        
-                                                            Block::make(PageLayoutTypesEnum::HERO_SECTION->value)
-                                                                ->schema([
-                                                                    TextInput::make('title')
-                                                                        ->required($tab->isMainLocale()),
-                                                                    TextInput::make('subtitle'),
-                                                                    FileUpload::make('image')
-                                                                        ->panelLayout('grid')
-                                                                        ->directory('page-builder')
-                                                                        ->image()
-                                                                        ->nullable()
-                                                                        ->disk(config('filament-page-builder.disk')),
-                                                                    FileUpload::make('sticker')
-                                                                        ->panelLayout('grid')
-                                                                        ->directory('page-builder')
-                                                                        ->image()
-                                                                        ->nullable()
-                                                                        ->disk(config('filament-page-builder.disk')),
-                                                                    TextInput::make('button-text'),
-                                                                    TextInput::make('button-path'),
-                                                                ])
-                                                                ->columns(),
-
-                                                            Block::make(PageLayoutTypesEnum::IMAGE_GALLERY->value)
-                                                                ->schema([
-                                                                    TextInput::make('text'),
-                                                                    FileUpload::make('images')
-                                                                        ->panelLayout('grid')
-                                                                        ->directory('page-builder')
-                                                                        ->multiple()
-                                                                        ->reorderable()
-                                                                        ->image()
-                                                                        ->required($tab->isMainLocale())
-                                                                        ->disk(config('filament-page-builder.disk')),
-                                                                    TextInput::make('button-text'),
-                                                                    TextInput::make('button-path'),
-                                                                ]),
-
-                                                                Block::make(PageLayoutTypesEnum::BANNER->value)
-                                                                ->schema([
-                                                                    TextInput::make('title')->nullable(),
-                                                                    TextInput::make('text')->nullable(),
-                                                                    RichEditor::make('description')->nullable(),
-                                                                    FileUpload::make('background-image')
-                                                                        ->panelLayout('grid')
-                                                                        ->directory('page-builder')
-                                                                        ->image()
-                                                                        ->nullable()
-                                                                        ->disk(config('filament-page-builder.disk')),
-                                                                    FileUpload::make('image')
-                                                                        ->panelLayout('grid')
-                                                                        ->directory('page-builder')
-                                                                        ->image()
-                                                                        ->nullable()
-                                                                        ->disk(config('filament-page-builder.disk')),
-                                                                    TextInput::make('button-text'),
-                                                                    TextInput::make('button-path'),
-                                                                ]),
-
-                                                            Block::make(PageLayoutTypesEnum::RICH_TEXT_PAGE->value)
-                                                                ->schema([
-                                                                    TextInput::make('title')->required($tab->isMainLocale()),
-                                                                    RichEditor::make('content')->required($tab->isMainLocale()),
-                                                                ]),
-
-                                                            Block::make(PageLayoutTypesEnum::IMAGE_AND_RICH_TEXT->value)
-                                                                ->schema([
-                                                                    Select::make('variant')
-                                                                        ->label('Variant')
-                                                                        ->default(SectionLayoutTypeEnum::IMAGE_LEFT_TEXT_RIGHT->value)
-                                                                        ->options(collect(SectionLayoutTypeEnum::cases())->mapWithKeys(fn($case) => [
-                                                                            $case->value => $case->name,
-                                                                        ]))->required($tab->isMainLocale()),
-                                                                    TextInput::make('title')->nullable(),
-                                                                    FileUpload::make('image')
-                                                                        ->panelLayout('grid')
-                                                                        ->directory('page-builder')
-                                                                        ->image()
-                                                                        ->required($tab->isMainLocale())
-                                                                        ->disk(config('admin.page_builder_disk')),
-                                                                    FileUpload::make('sticker')
-                                                                        ->panelLayout('grid')
-                                                                        ->directory('page-builder')
-                                                                        ->image()
-                                                                        ->nullable()
-                                                                        ->disk(config('filament-page-builder.disk')),
-                                                                    FileUpload::make('background-image')
-                                                                        ->panelLayout('grid')
-                                                                        ->directory('page-builder')
-                                                                        ->image()
-                                                                        ->nullable()
-                                                                        ->disk(config('filament-page-builder.disk')),
-                                                                    RichEditor::make('content')->required(),
-                                                                ]),
-
-                                                            Block::make(PageLayoutTypesEnum::KEY_VALUE_SECTION->value)
-                                                                ->schema([
-                                                                    Select::make('variant')
-                                                                        ->label('Variant')
-                                                                        ->default(PageGridStyleEnum::NORMAL_GRID->value)
-                                                                        ->options(collect(PageGridStyleEnum::cases())->mapWithKeys(fn($case) => [
-                                                                            $case->value => $case->name,
-                                                                        ]))->required($tab->isMainLocale()),
-                                                                    TextInput::make('title')->nullable(),
-                                                                    Repeater::make('group')
-                                                                        ->schema([
-                                                                            TextInput::make('title')
-                                                                                ->live(onBlur: true)
-                                                                                ->afterStateUpdated(fn(Set $set, ?string $state) => $set('key', Str::slug($state)))
-                                                                                ->required($tab->isMainLocale()),
-                                                                            TextInput::make('key')->readOnly(),
-                                                                            RichEditor::make('description')->required($tab->isMainLocale()),
-                                                                            TextInput::make('hint')->nullable(),
-                                                                            FileUpload::make('image')
-                                                                                ->panelLayout('grid')
-                                                                                ->directory('page-builder')
-                                                                                ->image()
-                                                                                ->nullable()
-                                                                                ->disk(config('filament-page-builder.disk')),
-                                                                        ])->columns(),
-                                                                ]),
-
-                                                            Block::make(PageLayoutTypesEnum::RELATIONSHIP_CONTENT->value)
-                                                                ->schema([
-                                                                    Select::make('relationship')
-                                                                        ->options(collect(PageRelationshipTypeEnum::cases())->mapWithKeys(fn($case) => [
-                                                                            $case->value => $case->name,
-                                                                        ]))
-                                                                        ->required($tab->isMainLocale())
-                                                                        ->searchable(),
-                                                                ]),
-
-                                                            Block::make(PageLayoutTypesEnum::DIVIDER->value)
-                                                                ->schema([]),
-
-                                                            Block::make(PageLayoutTypesEnum::VIDEO_EMBEDDER->value)
-                                                                ->schema([
-                                                                    TextInput::make('title')->nullable(),
-                                                                    FileUpload::make('video')
-                                                                        ->panelLayout('grid')
-                                                                        ->directory('page-builder')
-                                                                        ->acceptedFileTypes(['video/mp4', 'video/avi', 'video/mpeg', 'video/quicktime'])
-                                                                        ->disk(config('admin.page_builder_disk'))
-                                                                        ->maxSize(20048)
-                                                                        ->nullable()
-                                                                        ->requiredWithout('external_url'),
-                                                                    TextInput::make('external_url')->nullable()->requiredWithout('video'),
-                                                                ]),
-                                                        ]),
+                                                        ->blocks($availableBlocks)
+                                                        ->blockNumbers(false)
+                                                        ->reorderable(false),
                                                 ]);
                                         }
 
@@ -467,11 +229,375 @@ class PageResource extends Resource
                                             ->schema($schema);
                                     }
                                     return $blocks;
-                                })
-                         ]),
+                                }),
+                        ]),
+                ]),
 
-                    ]),
+        ];
+    }
 
-    ];
+    /**
+     * Prepare builder state for the edit UI.
+     * - Expands types like `layout_section` to `layout_section:<layout_id>` for clarity.
+     * - Normalizes `data.columns` into a map keyed by layout column ID (string).
+     * - Expands blueprint components to `blueprint_component:<version_id>`.
+     */
+    protected static function formatBuilderStateForEdit(mixed $state): mixed
+    {
+        if (! is_array($state)) {
+            return $state;
         }
- }
+
+        foreach ($state as &$section) {
+            if (! is_array($section)) {
+                continue;
+            }
+
+            $sectionType = $section['type'] ?? null;
+
+            // Handle layout sections
+            if ($sectionType === 'layout_section') {
+                $layoutId = $section['data']['layout_id'] ?? null;
+                if ($layoutId) {
+                    // UI convenience: encode layout id in the type while editing
+                    $section['type'] = 'layout_section:' . $layoutId;
+                }
+
+                $layoutModel = $layoutId ? static::getLayoutById((int) $layoutId) : null;
+
+                // Normalize columns shape: id(string) => [blocks]
+                $normalizedColumnsById = [];
+                if ($layoutModel) {
+                    $persistedColumns = is_array($section['data']['columns'] ?? null) ? $section['data']['columns'] : [];
+                    // Build normalized map for all layout columns, filling empty ones with []
+                    foreach ($layoutModel->columns as $layoutColumn) {
+                        $idStr = (string) $layoutColumn->id;
+                        $value = $persistedColumns[$idStr] ?? [];
+                        $normalizedColumnsById[$idStr] = array_values((array) $value);
+                    }
+                }
+
+                $section['data']['columns'] = $normalizedColumnsById;
+            }
+
+            // Handle blueprint components: encode version id in type and normalize fields for editing
+            if ($sectionType === 'blueprint_component') {
+                $versionId = $section['data']['blueprint_version_id'] ?? null;
+                if ($versionId) {
+                    $section['type'] = 'blueprint_component:' . $versionId;
+                }
+            }
+        }
+
+        return $state;
+    }
+
+    /**
+     * Canonicalize builder state before persisting to the database.
+     * - Collapses `layout_section:<id>` back to `layout_section` and ensures `data.layout_id` is set.
+     * - Persists layout columns as an id-keyed map ordered by the layout's columns.
+     * - Normalizes blueprint components to canonical type and data shape.
+     */
+    protected static function dehydrateBuilderStateForSave(mixed $state): mixed
+    {
+        if (! is_array($state)) {
+            return $state;
+        }
+
+        foreach ($state as &$section) {
+            if (! is_array($section)) {
+                continue;
+            }
+
+            $rawType = $section['type'] ?? '';
+
+            // Layout sections: collapse to canonical shape
+            if ($rawType === 'layout_section' || (is_string($rawType) && str_starts_with($rawType, 'layout_section:'))) {
+                $section['type'] = 'layout_section';
+
+                $layoutId = $section['data']['layout_id'] ?? null;
+                $layoutModel = $layoutId ? static::getLayoutById((int) $layoutId) : null;
+
+                // Persist as id-keyed columns based on layout columns order
+                $columnsToPersist = [];
+                if ($layoutModel) {
+                    $uiColumns = $section['data']['columns'] ?? [];
+                    foreach ($layoutModel->columns as $layoutColumn) {
+                        $idStr = (string) $layoutColumn->id;
+                        $value = $uiColumns[$idStr] ?? [];
+                        $columnsToPersist[$idStr] = is_array($value) ? array_values($value) : [];
+                    }
+                }
+
+                $canonical = [
+                    'layout_id' => $layoutId,
+                    'columns' => $columnsToPersist,
+                ];
+                if (isset($section['data']['settings'])) {
+                    $canonical['settings'] = $section['data']['settings'];
+                }
+                $section['data'] = $canonical;
+            }
+
+            // Blueprint components: collapse to canonical type + shape
+            if ($rawType === 'blueprint_component' || (is_string($rawType) && str_starts_with($rawType, 'blueprint_component:'))) {
+                $section['type'] = 'blueprint_component';
+
+                // Normalize data shape
+                $fields = $section['data']['fields'] ?? [];
+
+                $typeParts = explode(':', $rawType, 2);
+                $blueprintVersionId = isset($typeParts[1]) ? (int) $typeParts[1] : null;
+
+                $section['data'] = [
+                    'blueprint_version_id' => $section['data']['blueprint_version_id'] ?? $blueprintVersionId,
+                    'fields' => is_array($fields) ? $fields : [],
+                ];
+            }
+        }
+
+        return $state;
+    }
+
+    // Dynamic Blueprint fields helpers
+    protected static function getBlueprintFieldsSchema(?int $versionId, TranslatableTab $tab): array
+    {
+        if (! $versionId) {
+            return [];
+        }
+
+        // Prefer using cached published versions; fallback to a direct find if not present
+        $version = static::getPublishedBlueprintVersions()->firstWhere('id', $versionId)
+            ?? BlueprintVersion::query()->find($versionId);
+        $schema = $version?->schema ?? [];
+        $fields = is_array($schema['fields'] ?? null) ? $schema['fields'] : [];
+
+        $components = [];
+        foreach ($fields as $field) {
+            if (! is_array($field)) {
+                continue;
+            }
+            $key = $field['key'] ?? null;
+            $type = (string) ($field['type'] ?? BlueprintFieldTypeEnum::TEXT->value);
+            if (! $key) {
+                continue;
+            }
+
+            $components[] = static::makeBlueprintFieldComponent($key, $type, $field, $tab);
+        }
+
+        return $components;
+    }
+
+    protected static function makeBlueprintFieldComponent(string $key, string $type, array $field, TranslatableTab $tab): \Filament\Forms\Components\Component
+    {
+        $label = $field['label'] ?? $key;
+        $help = $field['help'] ?? null;
+        $rules = $field['rules'] ?? '';
+        $rulesArr = is_array($rules) ? $rules : array_filter(array_map('trim', explode('|', (string) $rules)));
+        $options = $field['options'] ?? [];
+        // Section for blueprint fields uses statePath('fields'), so bind directly to key
+        $name = $key;
+
+        switch ($type) {
+            case BlueprintFieldTypeEnum::COLOR->value:
+                $comp = \Filament\Forms\Components\ColorPicker::make($name)->label($label);
+                break;
+            case BlueprintFieldTypeEnum::DATE->value:
+                $comp = \Filament\Forms\Components\DatePicker::make($name)->label($label);
+                break;
+            case BlueprintFieldTypeEnum::DATETIME->value:
+            case BlueprintFieldTypeEnum::DATETIME_LOCAL->value:
+                $comp = \Filament\Forms\Components\DateTimePicker::make($name)->label($label);
+                break;
+            case BlueprintFieldTypeEnum::TIME->value:
+                $comp = \Filament\Forms\Components\TimePicker::make($name)->label($label);
+                break;
+            case BlueprintFieldTypeEnum::EMAIL->value:
+                $comp = TextInput::make($name)->label($label)->email();
+                break;
+            case BlueprintFieldTypeEnum::URL->value:
+                $comp = TextInput::make($name)->label($label)->url();
+                break;
+            case BlueprintFieldTypeEnum::TEXTAREA->value:
+                $comp = Textarea::make($name)->label($label)->rows(4);
+                break;
+            case BlueprintFieldTypeEnum::RICH_TEXT->value:
+                $comp = RichEditor::make($name)->label($label);
+                break;
+            case BlueprintFieldTypeEnum::IMAGE->value:
+                $comp = FileUpload::make($name)
+                    ->label($label)
+                    ->image()
+                    ->directory('page-builder')
+                    ->disk(config('filament-page-builder.disk'));
+                break;
+            case BlueprintFieldTypeEnum::GALLERY->value:
+                $comp = FileUpload::make($name)
+                    ->label($label)
+                    ->image()
+                    ->multiple()
+                    ->reorderable()
+                    ->directory('page-builder')
+                    ->disk(config('filament-page-builder.disk'));
+                break;
+            case BlueprintFieldTypeEnum::NUMBER->value:
+                $comp = TextInput::make($name)->label($label)->numeric();
+                break;
+            case BlueprintFieldTypeEnum::TOGGLE->value:
+                $comp = Toggle::make($name)->label($label);
+                break;
+            case BlueprintFieldTypeEnum::SELECT->value:
+                $choices = $options['choices'] ?? [];
+                $comp = Select::make($name)
+                    ->label($label)
+                    ->options(is_array($choices) ? $choices : [])
+                    ->searchable();
+                if (! empty($options['multiple'])) {
+                    $comp = $comp->multiple();
+                }
+                break;
+            case BlueprintFieldTypeEnum::RELATION->value:
+                // For blueprint primitive 'relation', present a dropdown of active Relationship Types.
+                $all = RelationshipType::query()
+                    ->where('is_active', true)
+                    ->pluck('name', 'handle')
+                    ->toArray();
+
+                $allowed = $options['allowed_relationship_type_handles'] ?? null;
+                if (is_array($allowed) && ! empty($allowed)) {
+                    $all = array_intersect_key($all, array_flip($allowed));
+                }
+
+                $comp = Select::make($name)
+                    ->label($label)
+                    ->options($all)
+                    ->searchable()
+                    ->preload();
+
+                $defaultHandle = $options['relationship_type_handle'] ?? null;
+                if ($defaultHandle && isset($all[$defaultHandle])) {
+                    $comp = $comp->default($defaultHandle);
+                }
+                break;
+            case BlueprintFieldTypeEnum::TEXT->value:
+            default:
+                $comp = TextInput::make($name)->label($label);
+                break;
+        }
+
+        if ($help) {
+            $comp = $comp->helperText($help);
+        }
+        if (! empty($options['placeholder']) && method_exists($comp, 'placeholder')) {
+            $comp = $comp->placeholder($options['placeholder']);
+        }
+        if (! empty($rulesArr) && method_exists($comp, 'rules')) {
+            $comp = $comp->rules($rulesArr);
+        }
+        if (in_array('required', $rulesArr, true)) {
+            $comp = $comp->required();
+        }
+
+        return $comp;
+    }
+
+    /**
+     * Build Builder blocks for each published BlueprintVersion so they appear as first-class components.
+     */
+    protected static function getBlueprintBlocks(TranslatableTab $tab): array
+    {
+        $versions = static::getPublishedBlueprintVersions();
+
+        // Sort by normalized category, then by blueprint name (case-insensitive), then version asc
+        $sorted = $versions->sortBy(function ($bv) {
+            $catKey = static::normalizeCategoryKey($bv->blueprint?->category ?? null);
+            $nameKey = strtolower($bv->blueprint?->name ?? '');
+            return sprintf('%s|%s|%010d', $catKey, $nameKey, (int) $bv->version);
+        });
+
+        $blocks = [];
+        foreach ($sorted as $bv) {
+            $categoryLabel = static::humanizeCategory($bv->blueprint?->category ?? null);
+            $name = $bv->blueprint?->name ?? 'Blueprint';
+            $label = $categoryLabel . ' · ' . $name . ' v' . $bv->version;
+            $blocks[] = Block::make('blueprint_component:' . $bv->id)
+                ->label($label)
+                ->schema([
+                    // Bind all blueprint field inputs under data.fields
+                    Section::make('Fields')
+                        ->statePath('fields')
+                        ->schema(static::getBlueprintFieldsSchema($bv->id, $tab)),
+                ]);
+        }
+
+        return $blocks;
+    }
+
+    /**
+     * Request-local cache: returns all layouts with columns.
+     */
+    protected static function getAllLayoutsWithColumns(): ?Collection
+    {
+        static $cache = null;
+        if ($cache === null) {
+            $cache = PageLayout::with('columns')->get();
+        }
+        return $cache;
+    }
+
+    /**
+     * Request-local cache: lookup a layout by id using the preloaded collection.
+     */
+    protected static function getLayoutById(int $layoutId): ?\Threls\FilamentPageBuilder\Models\PageLayout
+    {
+        static $map = null;
+        if ($map === null) {
+            $map = static::getAllLayoutsWithColumns()->keyBy('id');
+        }
+        return $map->get($layoutId);
+    }
+
+    /**
+     * Request-local cache: get the available blocks for the given tab (base + blueprint).
+     */
+    protected static function getAvailableBlocksForTab(TranslatableTab $tab): array
+    {
+        // TODO: @garyThrels ensure old default blocks are no longer needed before fully removing
+        // $baseBlocks = DefaultBlocks::build($tab);
+        // $blueprintBlocks = static::getBlueprintBlocks($tab);
+        // return array_merge($baseBlocks, $blueprintBlocks);
+        return static::getBlueprintBlocks($tab);
+    }
+
+    /**
+     * Request-local cache: get published blueprint versions with blueprint relation.
+     */
+    protected static function getPublishedBlueprintVersions(): ?Collection
+    {
+        static $cache = null;
+        if ($cache === null) {
+            $cache = BlueprintVersion::query()
+                ->where('status', 'published')
+                ->with('blueprint')
+                ->orderBy('blueprint_id')
+                ->orderBy('version')
+                ->get();
+        }
+        return $cache;
+    }
+
+    // Category helpers
+    protected static function normalizeCategoryKey(?string $category): string
+    {
+        $c = strtolower((string) ($category ?: 'uncategorized'));
+        // remove all non-alphanumeric
+        return preg_replace('/[^a-z0-9]/', '', $c) ?: 'uncategorized';
+    }
+
+    protected static function humanizeCategory(?string $category): string
+    {
+        $c = trim((string) ($category ?: 'Uncategorized'));
+        return ucwords(strtolower($c));
+    }
+}
