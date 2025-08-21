@@ -26,6 +26,7 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\TrashedFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 use Threls\FilamentPageBuilder\Enums\BlueprintFieldTypeEnum;
 use Threls\FilamentPageBuilder\Enums\PageStatusEnum;
