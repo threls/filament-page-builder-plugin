@@ -21,8 +21,8 @@ class HeroSectionData extends Data
     public static function fromArray(array $data): self
     {
         return new self(
-            image: $data['image'] ?? null,
-            sticker: $data['sticker'] ?? null,
+            image: null, // $data['image'] ?? null,
+            sticker: null, //$data['sticker'] ?? null,
             title: $data['title'],
             subtitle: $data['subtitle'] ?? null,
             buttonText: $data['button-text'] ?? null,
