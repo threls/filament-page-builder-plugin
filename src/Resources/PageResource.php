@@ -219,6 +219,8 @@ class PageResource extends Resource
                                                         ->label('Component')
                                                         ->hiddenLabel()
                                                         ->maxItems(1)
+                                                        ->formatStateUsing(fn ($state) => static::formatBuilderStateForEdit($state))
+                                                        ->dehydrateStateUsing(fn ($state) => static::dehydrateBuilderStateForSave($state))
                                                         ->blocks($availableBlocks)
                                                         ->blockNumbers(false)
                                                         ->reorderable(false),
@@ -241,10 +243,11 @@ class PageResource extends Resource
      * Prepare builder state for the edit UI.
      * - Expands types like `layout_section` to `layout_section:<layout_id>` for clarity.
      * - Normalizes `data.columns` into a map keyed by layout column ID (string).
-     * - Expands blueprint components to `blueprint_component:<version_id>`.
+     * - Expects blueprint components to use per-blueprint edit type `blueprint:<blueprint_id>`.
      */
     protected static function formatBuilderStateForEdit(mixed $state): mixed
     {
+        dump(['formatBuilderStateForEdit', $state]);
         if (! is_array($state)) {
             return $state;
         }
@@ -256,6 +259,8 @@ class PageResource extends Resource
 
             $sectionType = $section['type'] ?? null;
 
+            // No catch-all unmatched transformation in Option 1.
+
             // Handle layout sections
             if ($sectionType === 'layout_section') {
                 $layoutId = $section['data']['layout_id'] ?? null;
@@ -263,29 +268,26 @@ class PageResource extends Resource
                     // UI convenience: encode layout id in the type while editing
                     $section['type'] = 'layout_section:' . $layoutId;
                 }
-
-                $layoutModel = $layoutId ? static::getLayoutById((int) $layoutId) : null;
-
-                // Normalize columns shape: id(string) => [blocks]
-                $normalizedColumnsById = [];
-                if ($layoutModel) {
-                    $persistedColumns = is_array($section['data']['columns'] ?? null) ? $section['data']['columns'] : [];
-                    // Build normalized map for all layout columns, filling empty ones with []
-                    foreach ($layoutModel->columns as $layoutColumn) {
-                        $idStr = (string) $layoutColumn->id;
-                        $value = $persistedColumns[$idStr] ?? [];
-                        $normalizedColumnsById[$idStr] = array_values((array) $value);
-                    }
-                }
-
-                $section['data']['columns'] = $normalizedColumnsById;
+                // Columns are bound by known layout column IDs in the UI; no normalization needed here.
             }
 
-            // Handle blueprint components: encode version id in type and normalize fields for editing
-            if ($sectionType === 'blueprint_component') {
+            // Blueprint components: map canonical type to per-blueprint UI type so Builder matches blocks
+            if (
+                $sectionType === 'blueprint_component'
+                || (is_string($sectionType) && str_starts_with($sectionType, 'blueprint_component:'))
+            ) {
                 $versionId = $section['data']['blueprint_version_id'] ?? null;
+                if (! $versionId && is_string($sectionType) && str_starts_with($sectionType, 'blueprint_component:')) {
+                    $parts = explode(':', $sectionType, 2);
+                    $versionId = isset($parts[1]) ? (int) $parts[1] : null;
+                }
                 if ($versionId) {
-                    $section['type'] = 'blueprint_component:' . $versionId;
+                    $version = static::getPublishedBlueprintVersions()->firstWhere('id', (int) $versionId)
+                        ?? BlueprintVersion::query()->find((int) $versionId);
+                    $blueprintId = $version?->blueprint_id;
+                    if ($blueprintId) {
+                        $section['type'] = 'blueprint:' . (int) $blueprintId;
+                    }
                 }
             }
         }
@@ -301,6 +303,7 @@ class PageResource extends Resource
      */
     protected static function dehydrateBuilderStateForSave(mixed $state): mixed
     {
+        dump(['dehydrateBuilderStateForSave', $state]);
         if (! is_array($state)) {
             return $state;
         }
@@ -311,6 +314,17 @@ class PageResource extends Resource
             }
 
             $rawType = $section['type'] ?? '';
+
+            // If this is an unmatched placeholder from edit-time, restore the original type + data first
+            if ($rawType === 'unmatched_block') {
+                $origType = $section['data']['original_type'] ?? null;
+                $origData = $section['data']['original_data'] ?? null;
+                if (is_string($origType) && is_array($origData)) {
+                    $section['type'] = $origType;
+                    $section['data'] = $origData;
+                    $rawType = $origType; // fall through to normal canonicalization
+                }
+            }
 
             // Layout sections: collapse to canonical shape
             if ($rawType === 'layout_section' || (is_string($rawType) && str_starts_with($rawType, 'layout_section:'))) {
@@ -340,19 +354,61 @@ class PageResource extends Resource
                 $section['data'] = $canonical;
             }
 
-            // Blueprint components: collapse to canonical type + shape
-            if ($rawType === 'blueprint_component' || (is_string($rawType) && str_starts_with($rawType, 'blueprint_component:'))) {
+            // Blueprint components: collapse to canonical type + shape (expects 'blueprint:<id>')
+            if (is_string($rawType) && str_starts_with($rawType, 'blueprint:')) {
                 $section['type'] = 'blueprint_component';
 
-                // Normalize data shape
-                $fields = $section['data']['fields'] ?? [];
+                // Determine version id to persist
+                $versionId = null;
+                // blueprint:<blueprint_id> -> use latest published version for that blueprint
+                $parts = explode(':', $rawType, 2);
+                $blueprintId = isset($parts[1]) ? (int) $parts[1] : null;
+                if ($blueprintId) {
+                    $latest = static::getPublishedBlueprintVersions()
+                        ->where('blueprint_id', $blueprintId)
+                        ->sortByDesc('version')
+                        ->first();
+                    $versionId = $latest?->id;
+                }
 
-                $typeParts = explode(':', $rawType, 2);
-                $blueprintVersionId = isset($typeParts[1]) ? (int) $typeParts[1] : null;
+                // Collect fields based on resolved version schema from UI data.* (or nested data.fields as fallback)
+                $collected = [];
+                if ($versionId) {
+                    $version = static::getPublishedBlueprintVersions()->firstWhere('id', (int) $versionId)
+                        ?? \Threls\FilamentPageBuilder\Models\BlueprintVersion::query()->find((int) $versionId);
+                    $schema = $version?->schema ?? [];
+                    $schemaFields = is_array($schema['fields'] ?? null) ? $schema['fields'] : [];
+                    foreach ($schemaFields as $fieldDef) {
+                        if (! is_array($fieldDef)) {
+                            continue;
+                        }
+                        $fKey = $fieldDef['key'] ?? null;
+                        $fType = (string) ($fieldDef['type'] ?? '');
+                        if (! $fKey) {
+                            continue;
+                        }
+                        $val = $section['data'][$fKey] ?? ($section['data']['fields'][$fKey] ?? null);
+                        if ($fType === \Threls\FilamentPageBuilder\Enums\BlueprintFieldTypeEnum::GALLERY->value) {
+                            if ($val === null || $val === '') {
+                                $val = [];
+                            } elseif (is_string($val)) {
+                                $val = [$val];
+                            } elseif (is_array($val)) {
+                                $val = array_values($val);
+                            }
+                        }
+                        if ($fType === \Threls\FilamentPageBuilder\Enums\BlueprintFieldTypeEnum::IMAGE->value) {
+                            if (is_array($val)) {
+                                $val = array_values($val)[0] ?? null;
+                            }
+                        }
+                        $collected[$fKey] = $val;
+                    }
+                }
 
                 $section['data'] = [
-                    'blueprint_version_id' => $section['data']['blueprint_version_id'] ?? $blueprintVersionId,
-                    'fields' => is_array($fields) ? $fields : [],
+                    'blueprint_version_id' => $versionId ? (int) $versionId : null,
+                    'fields' => $collected,
                 ];
             }
         }
@@ -387,7 +443,12 @@ class PageResource extends Resource
             $components[] = static::makeBlueprintFieldComponent($key, $type, $field, $tab);
         }
 
-        return $components;
+        // Important: bind all blueprint field components under data.fields (relative to block data)
+        return [
+            Section::make('')
+                ->schema($components)
+                ->statePath('fields'),
+        ];
     }
 
     protected static function makeBlueprintFieldComponent(string $key, string $type, array $field, TranslatableTab $tab): \Filament\Forms\Components\Component
@@ -430,8 +491,40 @@ class PageResource extends Resource
                 $comp = FileUpload::make($name)
                     ->label($label)
                     ->image()
+                    ->multiple()
+                    ->maxFiles(1)
                     ->directory('page-builder')
-                    ->disk(config('filament-page-builder.disk'));
+                    ->disk(config('filament-page-builder.disk'))
+                    ->default([])
+                    ->afterStateHydrated(function (callable $set, $state) use ($name) {
+                        // Normalize to array for single-image to avoid foreach errors on hydration
+                        if ($state === null || $state === '') {
+                            $set($name, []);
+                            return;
+                        }
+                        if (is_string($state)) {
+                            $set($name, [$state]);
+                            return;
+                        }
+                        if (is_array($state)) {
+                            $set($name, array_slice(array_values($state), 0, 1));
+                            return;
+                        }
+                        $set($name, []);
+                    })
+                    ->formatStateUsing(function ($state) {
+                        // Ensure single-image state is an array with at most 1 item
+                        if ($state === null || $state === '') {
+                            return [];
+                        }
+                        if (is_string($state)) {
+                            return [$state];
+                        }
+                        if (is_array($state)) {
+                            return array_slice(array_values($state), 0, 1);
+                        }
+                        return [];
+                    });
                 break;
             case BlueprintFieldTypeEnum::GALLERY->value:
                 $comp = FileUpload::make($name)
@@ -440,7 +533,37 @@ class PageResource extends Resource
                     ->multiple()
                     ->reorderable()
                     ->directory('page-builder')
-                    ->disk(config('filament-page-builder.disk'));
+                    ->disk(config('filament-page-builder.disk'))
+                    ->default([])
+                    ->afterStateHydrated(function (callable $set, $state) use ($name) {
+                        // Normalize to array on hydration to avoid BaseFileUpload foreach errors
+                        if ($state === null || $state === '') {
+                            $set($name, []);
+                            return;
+                        }
+                        if (is_string($state)) {
+                            $set($name, [$state]);
+                            return;
+                        }
+                        if (is_array($state)) {
+                            $set($name, array_values($state));
+                            return;
+                        }
+                        $set($name, []);
+                    })
+                    ->formatStateUsing(function ($state) {
+                        // Ensure multiple file state is an array
+                        if ($state === null || $state === '') {
+                            return [];
+                        }
+                        if (is_string($state)) {
+                            return [$state];
+                        }
+                        if (is_array($state)) {
+                            return array_values($state);
+                        }
+                        return [];
+                    });
                 break;
             case BlueprintFieldTypeEnum::NUMBER->value:
                 $comp = TextInput::make($name)->label($label)->numeric();
@@ -509,27 +632,27 @@ class PageResource extends Resource
     protected static function getBlueprintBlocks(TranslatableTab $tab): array
     {
         $versions = static::getPublishedBlueprintVersions();
+        // Group by blueprint and pick latest (highest version)
+        $latestByBlueprint = $versions
+            ->groupBy('blueprint_id')
+            ->map(fn ($group) => $group->sortByDesc('version')->first())
+            ->values();
 
-        // Sort by normalized category, then by blueprint name (case-insensitive), then version asc
-        $sorted = $versions->sortBy(function ($bv) {
+        // Sort by normalized category, then by blueprint name (case-insensitive)
+        $sorted = $latestByBlueprint->sortBy(function ($bv) {
             $catKey = static::normalizeCategoryKey($bv->blueprint?->category ?? null);
             $nameKey = strtolower($bv->blueprint?->name ?? '');
-            return sprintf('%s|%s|%010d', $catKey, $nameKey, (int) $bv->version);
+            return sprintf('%s|%s', $catKey, $nameKey);
         });
 
         $blocks = [];
         foreach ($sorted as $bv) {
             $categoryLabel = static::humanizeCategory($bv->blueprint?->category ?? null);
             $name = $bv->blueprint?->name ?? 'Blueprint';
-            $label = $categoryLabel . ' · ' . $name . ' v' . $bv->version;
-            $blocks[] = Block::make('blueprint_component:' . $bv->id)
+            $label = $categoryLabel . ' · ' . $name;
+            $blocks[] = Block::make('blueprint:' . $bv->blueprint_id)
                 ->label($label)
-                ->schema([
-                    // Bind all blueprint field inputs under data.fields
-                    Section::make('Fields')
-                        ->statePath('fields')
-                        ->schema(static::getBlueprintFieldsSchema($bv->id, $tab)),
-                ]);
+                ->schema(static::getBlueprintFieldsSchema($bv->id, $tab));
         }
 
         return $blocks;
@@ -560,14 +683,10 @@ class PageResource extends Resource
     }
 
     /**
-     * Request-local cache: get the available blocks for the given tab (base + blueprint).
+     * Request-local cache: get the available blocks for the given tab (blueprints only).
      */
     protected static function getAvailableBlocksForTab(TranslatableTab $tab): array
     {
-        // TODO: @garyThrels ensure old default blocks are no longer needed before fully removing
-        // $baseBlocks = DefaultBlocks::build($tab);
-        // $blueprintBlocks = static::getBlueprintBlocks($tab);
-        // return array_merge($baseBlocks, $blueprintBlocks);
         return static::getBlueprintBlocks($tab);
     }
 
