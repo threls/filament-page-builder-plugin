@@ -195,7 +195,7 @@ class PageResource extends Resource
                                 ->generateUuidUsing(false)
                                 ->reorderableWithDragAndDrop(true)
                                 ->reorderableWithButtons()
-                                ->formatStateUsing(fn ($state) => static::formatBuilderStateForEdit($state))
+                                ->formatStateUsing(fn ($state) => static::formatBuilderStateForEdit($state, 'Layout'))
                                 ->dehydrateStateUsing(fn ($state) => static::dehydrateBuilderStateForSave($state))
                                 ->blockNumbers(false)
                                 ->blocks(function () use ($tab) {
@@ -212,6 +212,8 @@ class PageResource extends Resource
                                         foreach ($layout->columns as $i => $col) {
                                             $label = $col->name ?: ('Column ' . ($col->key ?? $col->index));
 
+//                                            dump(['Cols', $col->id, $col]);
+
                                             $schema[] = Section::make($label)
                                                 ->schema([
                                                     // Bind directly to the persisted columns map by column id
@@ -219,7 +221,6 @@ class PageResource extends Resource
                                                         ->label('Component')
                                                         ->hiddenLabel()
                                                         ->maxItems(1)
-                                                        ->formatStateUsing(fn ($state) => static::formatBuilderStateForEdit($state))
                                                         ->dehydrateStateUsing(fn ($state) => static::dehydrateBuilderStateForSave($state))
                                                         ->blocks($availableBlocks)
                                                         ->blockNumbers(false)
@@ -245,13 +246,12 @@ class PageResource extends Resource
      * - Normalizes `data.columns` into a map keyed by layout column ID (string).
      * - Expects blueprint components to use per-blueprint edit type `blueprint:<blueprint_id>`.
      */
-    protected static function formatBuilderStateForEdit(mixed $state): mixed
+    protected static function formatBuilderStateForEdit(mixed $state, string $log): mixed
     {
-        dump(['formatBuilderStateForEdit', $state]);
+        dump(['formatBuilderStateForEdit', $log, $state]);
         if (! is_array($state)) {
             return $state;
         }
-
         foreach ($state as &$section) {
             if (! is_array($section)) {
                 continue;
@@ -268,30 +268,45 @@ class PageResource extends Resource
                     // UI convenience: encode layout id in the type while editing
                     $section['type'] = 'layout_section:' . $layoutId;
                 }
-                // Columns are bound by known layout column IDs in the UI; no normalization needed here.
-            }
+                // Map nested blocks' types so they match available blocks in the Builder UI.
+                $columns = is_array($section['data']['columns'] ?? null) ? $section['data']['columns'] : [];
+                foreach ($columns as $colId => &$blocks) {
+                    if (! is_array($blocks)) {
+                        continue;
+                    }
+                    foreach ($blocks as &$block) {
+                        if (! is_array($block)) {
+                            continue;
+                        }
+                        $bType = $block['type'] ?? null;
+                        if (
+                            $bType === 'blueprint_component'
+                            || (is_string($bType) && str_starts_with($bType, 'blueprint_component:'))
+                        ) {
+                            // Extract Blueprint Version ID from block data
+                            $versionId = $block['data']['blueprint_version_id'] ?? null;
+                            if (! $versionId && is_string($bType) && str_starts_with($bType, 'blueprint_component:')) {
+                                $parts = explode(':', $bType, 2);
+                                $versionId = isset($parts[1]) ? (int) $parts[1] : null;
+                            }
 
-            // Blueprint components: map canonical type to per-blueprint UI type so Builder matches blocks
-            if (
-                $sectionType === 'blueprint_component'
-                || (is_string($sectionType) && str_starts_with($sectionType, 'blueprint_component:'))
-            ) {
-                $versionId = $section['data']['blueprint_version_id'] ?? null;
-                if (! $versionId && is_string($sectionType) && str_starts_with($sectionType, 'blueprint_component:')) {
-                    $parts = explode(':', $sectionType, 2);
-                    $versionId = isset($parts[1]) ? (int) $parts[1] : null;
-                }
-                if ($versionId) {
-                    $version = static::getPublishedBlueprintVersions()->firstWhere('id', (int) $versionId)
-                        ?? BlueprintVersion::query()->find((int) $versionId);
-                    $blueprintId = $version?->blueprint_id;
-                    if ($blueprintId) {
-                        $section['type'] = 'blueprint:' . (int) $blueprintId;
+                            if ($versionId) {
+                                $version = static::getPublishedBlueprintVersions()->firstWhere('id', (int) $versionId)
+                                    ?? BlueprintVersion::query()->find((int) $versionId);
+                                $blueprintId = $version?->blueprint_id;
+                                if ($blueprintId) {
+                                    $block['type'] = 'blueprint:' . (int) $blueprintId;
+                                }
+                            }
+                        }
                     }
                 }
+                unset($blocks); // break references
+                $section['data']['columns'] = $columns;
+                dump(['formatBuilderStateForEdit: layout_section', $section]);
+
             }
         }
-
         return $state;
     }
 
