@@ -186,8 +186,8 @@ class PageResource extends Resource
                         ->localeTabSchema(fn (TranslatableTab $tab) => [
                             Builder::make($tab->makeName('content'))
                                 ->hiddenLabel()
-                                ->generateUuidUsing(false)
-                                ->reorderableWithDragAndDrop(true)
+                                ->addActionLabel('Add a section layout')
+                                ->reorderableWithDragAndDrop(false) // TODO: try upgrading to latest filament - issues with dragging at the moment
                                 ->reorderableWithButtons()
                                 ->formatStateUsing(fn ($state) => PageBuilderFormatUtil::formatBuilderStateForEdit($state, 'Layout'))
                                 ->dehydrateStateUsing(fn ($state) => PageBuilderDehydrateUtil::dehydrateBuilderStateForSave($state))
@@ -234,11 +234,11 @@ class PageResource extends Resource
         ];
     }
 
-    
 
-    
 
-    
 
-    
+
+
+
+
 }
