@@ -212,13 +212,14 @@ class PageResource extends Resource
                                                 ->schema([
                                                     // Bind directly to the persisted columns map by column id
                                                     Builder::make('columns.' . $col->id)
-                                                        ->label('Component')
+                                                        ->label('Components')
                                                         ->hiddenLabel()
-                                                        ->maxItems(1)
                                                         ->dehydrateStateUsing(fn ($state) => PageBuilderDehydrateUtil::dehydrateBuilderStateForSave($state))
                                                         ->blocks($availableBlocks)
                                                         ->blockNumbers(false)
-                                                        ->reorderable(false),
+                                                        ->reorderableWithButtons()
+                                                        ->reorderableWithDragAndDrop(false)
+                                                        ->addActionLabel('Add component in column'),
                                                 ]);
                                         }
 

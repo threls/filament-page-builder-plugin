@@ -18,7 +18,8 @@ class LayoutSectionData extends Data
     private static array $layoutCache = [];
     public function __construct(
         public int $layout_id,
-        public array $items,
+        #[DataCollectionOf(ColumnData::class)]
+        public array $columns,
         public array|Optional $settings = new Optional(),
         // include layout settings in API payloads
         public array $layout_settings = [],
@@ -29,12 +30,11 @@ class LayoutSectionData extends Data
     {
         $layoutId = (int) ($data['layout_id'] ?? 0);
         $persistedColumns = $data['columns'] ?? [];
-        $items = [];
+        $columnsPayload = [];
         $rawSettings = $data['settings'] ?? null;
         $settings = is_array($rawSettings) ? $rawSettings : [];
 
         $layoutSettings = [];
-        $columnsOut = [];
 
         if ($layoutId > 0) {
             $layout = self::$layoutCache[$layoutId] ?? null;
@@ -44,51 +44,72 @@ class LayoutSectionData extends Data
             }
             if ($layout) {
                 $layoutSettings = is_array($layout->settings) ? $layout->settings : [];
-                $columnsOut = [];
+                // Build columns as objects with metadata and components (preserve column order)
                 foreach ($layout->columns as $col) {
-                    $columnsOut[] = [
-                        'id' => $col->id,
-                        'key' => $col->key ?: (string) $col->index,
-                        'index' => $col->index,
-                        'settings' => is_array($col->settings) ? $col->settings : [],
-                    ];
-                }
-                // Build items in layout index order, mapping via column id with fallback to key, include nulls for empty columns
-                foreach ($layout->columns as $col) {
-                    $idStr = (string) $col->id;
-                    $keyStr = $col->key ?: null;
-                    $entry = null;
-                    if (is_array($persistedColumns)) {
-                        if (array_key_exists($idStr, $persistedColumns)) {
-                            $entry = $persistedColumns[$idStr];
-                        } elseif ($keyStr !== null && array_key_exists($keyStr, $persistedColumns)) {
-                            $entry = $persistedColumns[$keyStr];
-                        }
-                    }
-                    $first = is_array($entry) ? (array_values($entry)[0] ?? null) : null;
-                    if (is_array($first) && isset($first['type'])) {
-                        // attach column meta under each item
-                        $columnMeta = [
-                            'id' => $col->id,
-                            'key' => $col->key ?: (string) $col->index,
-                            'index' => $col->index,
-                            'settings' => is_array($col->settings) ? $col->settings : [],
-                        ];
-                        $first['data'] = is_array($first['data'] ?? null) ? $first['data'] : [];
-                        $first['data']['column'] = $columnMeta;
-                        $items[] = ContentBlockData::fromArray($first);
-                    } else {
-                        $items[] = null; // include null placeholder when no content
-                    }
+                    $entry = self::findPersistedEntry($persistedColumns, $col);
+                    $columnComponents = self::mapBlocksToContent($entry);
+
+                    // Push ColumnData with metadata and components (possibly empty)
+                    $columnsPayload[] = new ColumnData(
+                        id: $col->id,
+                        key: $col->key ?: (string) $col->index,
+                        index: $col->index,
+                        settings: is_array($col->settings) ? $col->settings : [],
+                        components: $columnComponents,
+                    );
                 }
             }
         }
 
         return new self(
             layout_id: $layoutId,
-            items: $items,
+            columns: $columnsPayload,
             settings: ! empty($settings) ? $settings : new Optional(),
             layout_settings: $layoutSettings,
         );
+    }
+
+    /**
+     * Locate persisted blocks for a given column using id or key.
+     * @param array $persistedColumns
+     * @param mixed $col
+     * @return array|null
+     */
+    private static function findPersistedEntry(array $persistedColumns, $col): array|null
+    {
+        if (! is_array($persistedColumns)) {
+            return null;
+        }
+        $idStr = isset($col->id) ? (string) $col->id : null;
+        $keyStr = isset($col->key) && $col->key !== '' ? $col->key : null;
+
+        if ($idStr !== null && array_key_exists($idStr, $persistedColumns)) {
+            return $persistedColumns[$idStr];
+        }
+        if ($keyStr !== null && array_key_exists($keyStr, $persistedColumns)) {
+            return $persistedColumns[$keyStr];
+        }
+        return null;
+    }
+
+    /**
+     * Turn a raw builder entry array into an ordered list of ContentBlockData.
+     * @param array|null $entry
+     * @return array<int, ContentBlockData>
+     */
+    private static function mapBlocksToContent(?array $entry): array
+    {
+        $components = [];
+        if (! is_array($entry)) {
+            return $components;
+        }
+        $blocks = array_values($entry);
+        foreach ($blocks as $blk) {
+            if (! is_array($blk) || ! isset($blk['type'])) {
+                continue;
+            }
+            $components[] = ContentBlockData::fromArray($blk);
+        }
+        return $components;
     }
 }
