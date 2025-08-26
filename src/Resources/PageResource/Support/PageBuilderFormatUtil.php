@@ -42,7 +42,8 @@ class PageBuilderFormatUtil
         }
 
         $columns = self::extractColumnsForEdit($section);
-        $columns = self::normalizeBlueprintBlocksInColumns($columns);
+        // Normalize all blocks in columns, including nested layout sections and blueprint components.
+        $columns = self::normalizeBlocksInColumns($columns);
         $section['data']['columns'] = $columns;
 
         return $section;
@@ -59,7 +60,7 @@ class PageBuilderFormatUtil
         return is_array($section['data']['columns'] ?? null) ? $section['data']['columns'] : [];
     }
 
-    public static function normalizeBlueprintBlocksInColumns(array $columns): array
+    public static function normalizeBlocksInColumns(array $columns): array
     {
         foreach ($columns as $colId => &$blocks) {
             if (! is_array($blocks)) {
@@ -69,6 +70,12 @@ class PageBuilderFormatUtil
                 if (! is_array($block)) {
                     continue;
                 }
+                // Convert nested layout sections to editor-friendly types and normalize their inner columns.
+                if (($block['type'] ?? null) === 'layout_section') {
+                    $block = self::formatLayoutSectionForEdit($block);
+                    continue;
+                }
+                // Normalize blueprint component version mapping.
                 self::mapBlueprintBlockTypeForEdit($block);
             }
         }

@@ -194,8 +194,49 @@ class PageResource extends Resource
                                 ->blockNumbers(false)
                                 ->blocks(function () use ($tab) {
                                     // Build available blocks and layouts only once per request for performance.
-                                    $availableBlocks = PageBuilderFormatUtil::getAvailableBlocksForTab($tab);
+                                    $availableBlueprintBlocks = PageBuilderFormatUtil::getAvailableBlocksForTab($tab);
                                     $layouts = PageBuilderUtils::getAllLayoutsWithColumns();
+
+                                    // Build layout blocks for nested usage inside columns (recursive palette).
+                                    $buildLayoutBlocks = function () use (&$buildLayoutBlocks, $layouts, $tab) {
+                                        $nestedLayoutBlocks = [];
+                                        foreach ($layouts as $nestedLayout) {
+                                            $nestedSchema = [
+                                                // Persist the selected layout id in state (also inferred from type on dehydrate)
+                                                Hidden::make('layout_id')->default($nestedLayout->id),
+                                            ];
+
+                                            foreach ($nestedLayout->columns as $nestedCol) {
+                                                $nestedLabel = $nestedCol->name ?: ('Column ' . ($nestedCol->key ?? $nestedCol->index));
+                                                $nestedSchema[] = Section::make($nestedLabel)
+                                                    ->schema([
+                                                        // Nested column builder supports both blueprint components and further layout sections
+                                                        Builder::make('columns.' . $nestedCol->id)
+                                                            ->label('Components')
+                                                            ->hiddenLabel()
+                                                            ->dehydrateStateUsing(fn ($state) => PageBuilderDehydrateUtil::dehydrateBuilderStateForSave($state))
+                                                            ->blocks(function () use ($tab, &$buildLayoutBlocks) {
+                                                                $blueprint = PageBuilderFormatUtil::getAvailableBlocksForTab($tab);
+                                                                $layoutsPalette = $buildLayoutBlocks();
+                                                                return array_merge($layoutsPalette, $blueprint);
+                                                            })
+                                                            ->blockNumbers(false)
+                                                            ->reorderableWithButtons()
+                                                            ->reorderableWithDragAndDrop(false)
+                                                            ->addActionLabel('Add component in column'),
+                                                    ]);
+                                            }
+
+                                            $nestedLayoutBlocks[] = Block::make('layout_section:' . $nestedLayout->id)
+                                                ->label('Layout ·' . $nestedLayout->name)
+                                                ->schema($nestedSchema);
+                                        }
+
+                                        return $nestedLayoutBlocks;
+                                    };
+
+                                    // Palette for column builders at the top level: layouts first, then blueprint components
+                                    $availableForColumns = array_merge($buildLayoutBlocks(), $availableBlueprintBlocks);
                                     $blocks = [];
                                     foreach ($layouts as $layout) {
                                         $schema = [
@@ -206,8 +247,6 @@ class PageResource extends Resource
                                         foreach ($layout->columns as $i => $col) {
                                             $label = $col->name ?: ('Column ' . ($col->key ?? $col->index));
 
-//                                            dump(['Cols', $col->id, $col]);
-
                                             $schema[] = Section::make($label)
                                                 ->schema([
                                                     // Bind directly to the persisted columns map by column id
@@ -215,7 +254,7 @@ class PageResource extends Resource
                                                         ->label('Components')
                                                         ->hiddenLabel()
                                                         ->dehydrateStateUsing(fn ($state) => PageBuilderDehydrateUtil::dehydrateBuilderStateForSave($state))
-                                                        ->blocks($availableBlocks)
+                                                        ->blocks($availableForColumns)
                                                         ->blockNumbers(false)
                                                         ->reorderableWithButtons()
                                                         ->reorderableWithDragAndDrop(false)
@@ -224,7 +263,7 @@ class PageResource extends Resource
                                         }
 
                                         $blocks[] = Block::make('layout_section:' . $layout->id)
-                                            ->label($layout->name)
+                                            ->label('Layout · ' . $layout->name)
                                             ->schema($schema);
                                     }
                                     return $blocks;
