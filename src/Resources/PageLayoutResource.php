@@ -104,6 +104,12 @@ class PageLayoutResource extends Resource
                                     ->live(onBlur: true)
                                     ->nullable(),
                                 BreakpointFields::numberFlexible('Weight', 'settings.weight', ''),
+                                BreakpointFields::numberFlexible('Gap (px)', 'settings.gap-y', 'px'),
+                                BreakpointFields::numberFlexible('Padding Left (px)', 'settings.padding-left', 'px'),
+                                BreakpointFields::numberFlexible('Padding Right (px)', 'settings.padding-right', 'px'),
+                                BreakpointFields::numberFlexible('Padding Top (px)', 'settings.padding-top', 'px'),
+                                BreakpointFields::numberFlexible('Padding Bottom (px)', 'settings.padding-bottom', 'px'),
+
                             ])
                             ->columnSpanFull(),
                     ]),

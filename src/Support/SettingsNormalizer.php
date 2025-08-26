@@ -119,6 +119,11 @@ class SettingsNormalizer
     public static function normalizeColumnSettings(array $settings): array
     {
         self::normalizeFlexibleNumeric($settings, 'weight');
+        self::normalizeFlexibleNumeric($settings, 'gap-y');
+        self::normalizeFlexibleNumeric($settings, 'padding-left');
+        self::normalizeFlexibleNumeric($settings, 'padding-right');
+        self::normalizeFlexibleNumeric($settings, 'padding-top');
+        self::normalizeFlexibleNumeric($settings, 'padding-bottom');
         // Remove empty settings map
         if ($settings === []) {
             return [];

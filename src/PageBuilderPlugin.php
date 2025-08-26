@@ -20,6 +20,7 @@ class PageBuilderPlugin implements Plugin
                 Resources\PageResource::class,
                 Resources\PageLayoutResource::class,
                 Resources\BlueprintResource::class,
+                Resources\CompositionResource::class,
                 Resources\RelationshipTypeResource::class,
             ])
             ->plugins([

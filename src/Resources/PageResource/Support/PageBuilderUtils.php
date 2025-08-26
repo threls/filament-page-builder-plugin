@@ -4,6 +4,7 @@ namespace Threls\FilamentPageBuilder\Resources\PageResource\Support;
 
 use Illuminate\Support\Collection;
 use Threls\FilamentPageBuilder\Models\BlueprintVersion;
+use Threls\FilamentPageBuilder\Models\Composition;
 use Threls\FilamentPageBuilder\Models\PageLayout;
 
 class PageBuilderUtils
@@ -47,6 +48,25 @@ class PageBuilderUtils
     }
 
     // Blueprint UI schema helpers moved to PageBuilderFormatUtil.
+
+    public static function getActiveCompositions(): ?Collection
+    {
+        static $cache = null;
+        if ($cache === null) {
+            $cache = Composition::query()
+                ->where('is_active', true)
+                ->orderBy('name')
+                ->get();
+        }
+        return $cache;
+    }
+
+    public static function getCompositionById(int $id): ?Composition
+    {
+        $list = self::getActiveCompositions();
+        $found = $list?->firstWhere('id', $id);
+        return $found ?: Composition::query()->find($id);
+    }
 
     public static function normalizeCategoryKey(?string $category): string
     {

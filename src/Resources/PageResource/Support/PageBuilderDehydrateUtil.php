@@ -2,7 +2,7 @@
 
 namespace Threls\FilamentPageBuilder\Resources\PageResource\Support;
 
-use Threls\FilamentPageBuilder\Enums\BlueprintFieldTypeEnum;
+use Illuminate\Support\Str;
 
 class PageBuilderDehydrateUtil
 {
@@ -22,6 +22,25 @@ class PageBuilderDehydrateUtil
 
             $rawType = $section['type'] ?? '';
             if (! is_string($rawType)) {
+                continue;
+            }
+
+            // Composition blocks
+            if (str_starts_with($rawType, 'composition:')) {
+                // Convert to canonical type and persist composition_id in data
+                $section['type'] = 'composition';
+                $parts = explode(':', $rawType, 2);
+                $compositionId = isset($parts[1]) ? (int) $parts[1] : null;
+
+                $data = is_array($section['data'] ?? null) ? $section['data'] : [];
+                if ($compositionId && empty($data['composition_id'])) {
+                    $data['composition_id'] = $compositionId;
+                }
+                // Keep fields stable as an array for blueprint values, if present
+                if (! isset($data['fields']) || ! is_array($data['fields'])) {
+                    $data['fields'] = is_array($data['fields'] ?? null) ? $data['fields'] : [];
+                }
+                $section['data'] = $data;
                 continue;
             }
 
@@ -76,8 +95,15 @@ class PageBuilderDehydrateUtil
                     }
                 }
 
+                // Stable instance key
+                $instanceKey = $section['data']['instance_id'] ?? ($section['data']['instance_key'] ?? null);
+                if (! $instanceKey) {
+                    $instanceKey = (string) Str::uuid();
+                }
+
                 $section['data'] = [
                     'blueprint_version_id' => $versionId ? (int) $versionId : null,
+                    'instance_key' => $instanceKey,
                     'fields' => $collected,
                 ];
             }
@@ -85,4 +111,5 @@ class PageBuilderDehydrateUtil
 
         return $state;
     }
+
 }

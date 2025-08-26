@@ -4,14 +4,17 @@ namespace Threls\FilamentPageBuilder\Resources\PageResource\Support;
 
 use CactusGalaxy\FilamentAstrotomic\TranslatableTab;
 use Filament\Forms\Components\Builder\Block;
+use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\Section;
+use Filament\Forms\Components\Group;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\Toggle;
 use Threls\FilamentPageBuilder\Enums\BlueprintFieldTypeEnum;
+use Illuminate\Support\Str;
 use Threls\FilamentPageBuilder\Models\RelationshipType;
 
 class PageBuilderFormatUtil
@@ -29,6 +32,12 @@ class PageBuilderFormatUtil
             $sectionType = $section['type'] ?? null;
             if ($sectionType === 'layout_section') {
                 $section = self::formatLayoutSectionForEdit($section);
+            } elseif ($sectionType === 'composition') {
+                // Convert to editor block type: composition:<id>
+                $compId = (int) ($section['data']['composition_id'] ?? 0);
+                if ($compId > 0) {
+                    $section['type'] = 'composition:' . $compId;
+                }
             }
         }
         return $state;
@@ -100,17 +109,173 @@ class PageBuilderFormatUtil
                 // Use version-specific block type to ensure old pages keep their versions until edited.
                 $block['type'] = 'blueprint_version:' . (int) $versionId;
             }
+
+            // Ensure a stable instance id is present during edit by copying persisted instance_key
+            $instanceKey = $block['data']['instance_key'] ?? null;
+            if ($instanceKey && empty($block['data']['instance_id'])) {
+                $block['data']['instance_id'] = $instanceKey;
+            }
         }
     }
 
     // ==== UI schema helpers (Blueprint blocks/fields) ====
 
-    public static function getAvailableBlocksForTab(TranslatableTab $tab): array
+    public static function getAvailableBlueprintBlocks(): array
     {
-        return self::getBlueprintBlocks($tab);
+        return self::getBlueprintBlocks();
     }
 
-    public static function getBlueprintBlocks(TranslatableTab $tab): array
+    /**
+     * Build composition blocks for use at the root of PageResource.
+     * Each composition is a locked structure; only blueprint fields inside are editable.
+     */
+    public static function getCompositionBlocks(): array
+    {
+        $compositions = PageBuilderUtils::getActiveCompositions();
+        if (! $compositions || $compositions->isEmpty()) {
+            return [];
+        }
+
+        $blocks = [];
+        foreach ($compositions as $comp) {
+            $label = 'Composition · ' . $comp->name;
+            $schema = self::buildCompositionFieldsSchema($comp->payload ?? []);
+            // Prepend hidden id and ensure fields are stored under data.fields
+            array_unshift($schema, Hidden::make('composition_id')->default($comp->id));
+            $blocks[] = Block::make('composition:' . $comp->id)
+                ->label($label)
+                ->schema([
+                    Group::make()
+                        ->schema($schema)
+                        ->statePath('fields'),
+                ]);
+        }
+
+        return $blocks;
+    }
+
+    /**
+     * Build a static schema from a composition payload, flattening inner blueprint fields into sections.
+     */
+    public static function buildCompositionFieldsSchema(array $payload): array
+    {
+        // Build nested components from nodes, returning components instead of mutating outer state
+        $buildFromNodes = function (array $nodes, bool $isNested = false) use (&$buildFromNodes) {
+            $out = [];
+
+            $processedRootLayout = false;
+            foreach ($nodes as $node) {
+                if (! is_array($node)) {
+                    continue;
+                }
+
+                $rawType = (string) ($node['type'] ?? '');
+
+                // Handle layout sections (both canonical and editor-style types)
+                if ($rawType === 'layout_section' || str_starts_with($rawType, 'layout_section:')) {
+                    // At the root level of a composition, enforce a single root layout
+                    if (! $isNested && $processedRootLayout) {
+                        continue;
+                    }
+                    $layoutId = null;
+                    if (str_starts_with($rawType, 'layout_section:')) {
+                        $parts = explode(':', $rawType, 2);
+                        $layoutId = isset($parts[1]) ? (int) $parts[1] : null;
+                    }
+                    if (! $layoutId) {
+                        $layoutId = (int) ($node['data']['layout_id'] ?? 0);
+                    }
+
+                    $layout = $layoutId ? PageBuilderUtils::getLayoutById($layoutId) : null;
+                    $layoutLabel = $layout ? ('Layout · ' . $layout->name) : 'Layout';
+                    $columns = is_array(($node['data']['columns'] ?? null)) ? $node['data']['columns'] : [];
+
+                    $layoutSections = [];
+                    foreach ($columns as $colId => $blocks) {
+                        $col = $layout?->columns->firstWhere('id', (int) $colId);
+                        $colLabel = $col?->name ?: ('Column ' . ($col?->key ?? $col?->index ?? $colId));
+
+                        $sectionItems = [];
+                        $bpCounter = 0; // unique per-column index for blueprint instances
+                        foreach ((array) $blocks as $blk) {
+                            if (! is_array($blk)) {
+                                continue;
+                            }
+
+                            $bType = (string) ($blk['type'] ?? '');
+
+                            // Blueprint components (canonical and editor-style types)
+                            if ($bType === 'blueprint_component' || str_starts_with($bType, 'blueprint_version:')) {
+                                $versionId = null;
+                                if (str_starts_with($bType, 'blueprint_version:')) {
+                                    $parts = explode(':', $bType, 2);
+                                    $versionId = isset($parts[1]) ? (int) $parts[1] : null;
+                                }
+                                if (! $versionId) {
+                                    $versionId = (int) ($blk['data']['blueprint_version_id'] ?? 0);
+                                }
+
+                                if ($versionId) {
+                                    $fieldsSchema = self::getBlueprintFieldsSchema($versionId);
+                                    // Unwrap inner components from Section(statePath('fields'))
+                                    $inner = $fieldsSchema[0]->getChildComponents();
+                                    // Namespace each blueprint instance using a stable instance key if available
+                                    $instanceKey = (string) ($blk['data']['instance_key'] ?? ($blk['data']['instance_id'] ?? ''));
+                                    if ($instanceKey === '') {
+                                        // Legacy payload without instance key: fall back to per-column counter
+                                        $bpCounter++;
+                                        $instanceKey = (string) $bpCounter;
+                                    }
+                                    $sectionItems[] = Group::make()
+                                        ->statePath(sprintf('blueprints.%s.%s', $colId, $instanceKey))
+                                        ->schema($inner);
+                                }
+                                continue;
+                            }
+
+                            // Nested layout sections: build and embed under current column
+                            if ($bType === 'layout_section' || str_starts_with($bType, 'layout_section:')) {
+                                $nested = $buildFromNodes([$blk], true);
+                                if (! empty($nested)) {
+                                    // $nested already returns one or more Section components representing layouts
+                                    foreach ($nested as $nestedComp) {
+                                        $sectionItems[] = $nestedComp;
+                                    }
+                                }
+                            }
+                        }
+
+                        if (! empty($sectionItems)) {
+                            $layoutSections[] = Section::make($colLabel)
+                                ->schema($sectionItems);
+                        }
+                    }
+                    if (! empty($layoutSections)) {
+                        if ($isNested) {
+                            // For nested layouts, keep the layout wrapper section for clarity
+                            $out[] = Section::make($layoutLabel)
+                                ->schema($layoutSections);
+                        } else {
+                            // At the root level, flatten: return only the column sections to save space
+                            foreach ($layoutSections as $sectionComp) {
+                                $out[] = $sectionComp;
+                            }
+                        }
+                    }
+
+                    if (! $isNested) {
+                        $processedRootLayout = true;
+                    }
+                }
+            }
+
+            return $out;
+        };
+
+        return $buildFromNodes($payload, false);
+    }
+
+    public static function getBlueprintBlocks(): array
     {
         // Only list latest published version per blueprint for new additions.
         $versions = PageBuilderUtils::getPublishedBlueprintVersions();
@@ -130,15 +295,18 @@ class PageBuilderFormatUtil
             $categoryLabel = PageBuilderUtils::humanizeCategory($bv->blueprint?->category ?? null);
             $name = $bv->blueprint?->name ?? 'Blueprint';
             $label = sprintf('%s · %s', $categoryLabel, $name);
+            $fields = self::getBlueprintFieldsSchema($bv->id);
+            // Include a stable hidden instance id at the block root so it persists across reorders
+            array_unshift($fields, Hidden::make('instance_id')->default(fn () => (string) Str::uuid()));
             $blocks[] = Block::make('blueprint_version:' . $bv->id)
                 ->label($label)
-                ->schema(self::getBlueprintFieldsSchema($bv->id, $tab));
+                ->schema($fields);
         }
 
         return $blocks;
     }
 
-    public static function getBlueprintFieldsSchema(?int $versionId, TranslatableTab $tab): array
+    public static function getBlueprintFieldsSchema(?int $versionId): array
     {
         if (! $versionId) {
             return [];
@@ -159,7 +327,7 @@ class PageBuilderFormatUtil
                 continue;
             }
 
-            $components[] = self::makeBlueprintFieldComponent($key, $type, $field, $tab);
+            $components[] = self::makeBlueprintFieldComponent($key, $type, $field);
         }
 
         return [
@@ -169,7 +337,7 @@ class PageBuilderFormatUtil
         ];
     }
 
-    public static function makeBlueprintFieldComponent(string $key, string $type, array $field, TranslatableTab $tab): \Filament\Forms\Components\Component
+    public static function makeBlueprintFieldComponent(string $key, string $type, array $field): \Filament\Forms\Components\Component
     {
         $label = $field['label'] ?? $key;
         $help = $field['help'] ?? null;

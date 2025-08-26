@@ -194,8 +194,9 @@ class PageResource extends Resource
                                 ->blockNumbers(false)
                                 ->blocks(function () use ($tab) {
                                     // Build available blocks and layouts only once per request for performance.
-                                    $availableBlueprintBlocks = PageBuilderFormatUtil::getAvailableBlocksForTab($tab);
+                                    $availableBlueprintBlocks = PageBuilderFormatUtil::getAvailableBlueprintBlocks();
                                     $layouts = PageBuilderUtils::getAllLayoutsWithColumns();
+                                    $compositionBlocks = PageBuilderFormatUtil::getCompositionBlocks();
 
                                     // Build layout blocks for nested usage inside columns (recursive palette).
                                     $buildLayoutBlocks = function () use (&$buildLayoutBlocks, $layouts, $tab) {
@@ -216,7 +217,7 @@ class PageResource extends Resource
                                                             ->hiddenLabel()
                                                             ->dehydrateStateUsing(fn ($state) => PageBuilderDehydrateUtil::dehydrateBuilderStateForSave($state))
                                                             ->blocks(function () use ($tab, &$buildLayoutBlocks) {
-                                                                $blueprint = PageBuilderFormatUtil::getAvailableBlocksForTab($tab);
+                                                                $blueprint = PageBuilderFormatUtil::getAvailableBlueprintBlocks();
                                                                 $layoutsPalette = $buildLayoutBlocks();
                                                                 return array_merge($layoutsPalette, $blueprint);
                                                             })
@@ -228,7 +229,7 @@ class PageResource extends Resource
                                             }
 
                                             $nestedLayoutBlocks[] = Block::make('layout_section:' . $nestedLayout->id)
-                                                ->label('Layout ·' . $nestedLayout->name)
+                                                ->label('Layout · ' . $nestedLayout->name)
                                                 ->schema($nestedSchema);
                                         }
 
@@ -237,7 +238,11 @@ class PageResource extends Resource
 
                                     // Palette for column builders at the top level: layouts first, then blueprint components
                                     $availableForColumns = array_merge($buildLayoutBlocks(), $availableBlueprintBlocks);
+                                    // Root palette: compositions first, then layouts
                                     $blocks = [];
+                                    foreach ($compositionBlocks as $cb) {
+                                        $blocks[] = $cb;
+                                    }
                                     foreach ($layouts as $layout) {
                                         $schema = [
                                             // Persist the selected layout id in state (also inferred from type on dehydrate)
