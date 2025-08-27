@@ -74,4 +74,21 @@ return [
     'permissions' => [
         'can_create' => env('FILAMENT_PAGE_BUILDER_CAN_CREATE', true),
     ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Menu Locations
+    |--------------------------------------------------------------------------
+    |
+    | Define available menu locations for your application.
+    | You can add or remove locations as needed.
+    |
+    */
+    'menus' => [
+        'locations' => [
+            'header' => 'Header',
+            'footer' => 'Footer',
+            'sidebar' => 'Sidebar',
+        ],
+    ],
 ];
