@@ -20,8 +20,19 @@ class PageBuilderServiceProvider extends PackageServiceProvider
             ->hasViews()
             ->hasRoute('api')
             ->hasMigrations([
+                // Core plugin tables
                 'create_pages_table',
                 'create_page_translations_table',
+                'create_page_layouts_table',
+                'create_page_layout_columns_table',
+                // Blueprint system tables
+                'create_blueprints_table',
+                'create_blueprint_versions_table',
+                'create_relationship_types_table',
+                // Compositions table
+                'create_compositions_table',
+                // Spatie Media Library table
+                'create_media_table',
             ])
             ->publishesServiceProvider(TranslatableServiceProvider::class)
         ;

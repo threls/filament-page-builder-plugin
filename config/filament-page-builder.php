@@ -70,8 +70,14 @@ return [
         'en' => 'EN',
         'mt' => 'MT',
     ],
-    
+
     'permissions' => [
         'can_create' => env('FILAMENT_PAGE_BUILDER_CAN_CREATE', true),
+        'can_delete' => env('FILAMENT_PAGE_BUILDER_CAN_DELETE', true),
+        // Admin management abilities
+        'can_manage_layouts' => env('FILAMENT_PAGE_BUILDER_CAN_MANAGE_LAYOUTS', true),
+        'can_manage_blueprints' => env('FILAMENT_PAGE_BUILDER_CAN_MANAGE_BLUEPRINTS', true),
+        'can_manage_relationship_types' => env('FILAMENT_PAGE_BUILDER_CAN_MANAGE_REL_TYPES', true),
+        'can_manage_compositions' => env('FILAMENT_PAGE_BUILDER_CAN_MANAGE_COMPOSITIONS', true),
     ],
 ];

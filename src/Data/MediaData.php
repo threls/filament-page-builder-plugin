@@ -32,7 +32,7 @@ class MediaData extends Data
     public static function fromPath(string $path): self
     {
         $fileName = basename($path);
-        
+
         return new self(
             id: 0,
             name: pathinfo($fileName, PATHINFO_FILENAME),
