@@ -2,6 +2,18 @@
 
 All notable changes to `filament-page-builder` will be documented in this file.
 
+## 3.0.0-beta - 2025-08-28
+
+### What's Changed
+
+* Add Layouts, Blueprints and Compositions by @garyThrels in https://github.com/threls/filament-page-builder-plugin/pull/7
+
+### New Contributors
+
+* @garyThrels made their first contribution in https://github.com/threls/filament-page-builder-plugin/pull/7
+
+**Full Changelog**: https://github.com/threls/filament-page-builder-plugin/compare/2.4.1-beta...3.0.0-beta
+
 ## 2.4.1-beta - 2025-08-06
 
 **Full Changelog**: https://github.com/threls/filament-page-builder-plugin/compare/2.4.0-beta...2.4.1-beta
