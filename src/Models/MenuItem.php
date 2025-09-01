@@ -2,13 +2,14 @@
 
 namespace Threls\FilamentPageBuilder\Models;
 
+use Astrotomic\Translatable\Contracts\Translatable as TranslatableContract;
+use Astrotomic\Translatable\Translatable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\Storage;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
-use Astrotomic\Translatable\Contracts\Translatable as TranslatableContract;
-use Astrotomic\Translatable\Translatable;
 
 class MenuItem extends Model implements HasMedia, TranslatableContract
 {
@@ -20,6 +21,7 @@ class MenuItem extends Model implements HasMedia, TranslatableContract
         'parent_id',
         'type',
         'icon',
+        'icon_alt',
         'target',
         'order',
         'is_visible',
@@ -32,7 +34,6 @@ class MenuItem extends Model implements HasMedia, TranslatableContract
         'is_visible' => 'boolean',
         'order' => 'integer',
     ];
-
 
     public function menu(): BelongsTo
     {
@@ -85,8 +86,10 @@ class MenuItem extends Model implements HasMedia, TranslatableContract
             case 'page':
                 if ($this->page) {
                     $slug = $this->page->translate($locale)->slug ?? '';
+
                     return $slug ? "/{$slug}" : null;
                 }
+
                 return null;
             case 'internal':
             case 'external':
@@ -106,10 +109,11 @@ class MenuItem extends Model implements HasMedia, TranslatableContract
     public function getIconUrl(): ?string
     {
         if ($this->icon) {
-            return \Storage::disk('public')->url($this->icon);
+            return Storage::disk('public')->url($this->icon);
         }
 
         $media = $this->getFirstMedia('icon');
+
         return $media ? $media->getUrl() : null;
     }
 
@@ -118,9 +122,23 @@ class MenuItem extends Model implements HasMedia, TranslatableContract
         return $this->getIconUrl();
     }
 
-    public function isExternal(): bool
+    public function getIconAltUrl(): ?string
     {
-        return $this->type === 'external';
+        if ($this->icon_alt) {
+            return Storage::disk('public')->url($this->icon_alt);
+        }
+
+        return null;
+    }
+
+    public function getIconAltUrlAttribute(): ?string
+    {
+        return $this->getIconAltUrl();
+    }
+
+    public function getNameAttribute(): ?string
+    {
+        return $this->translations->first()?->name ?? $this->translate()?->name;
     }
 
     protected static function booted(): void

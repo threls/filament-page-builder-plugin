@@ -21,10 +21,70 @@ class MenuResource extends Resource
     public static function form(Form $form): Form
     {
         return $form
-            ->schema(
-                self::getFormSchema()
-            )
-            ->columns(3);
+            ->schema([
+                Forms\Components\Group::make()
+                    ->schema([
+                        Forms\Components\Section::make('Menu Information')
+                            ->schema([
+                                Forms\Components\TextInput::make('name')
+                                    ->label('Menu Name')
+                                    ->required()
+                                    ->maxLength(255),
+
+                                Forms\Components\Textarea::make('description')
+                                    ->label('Description')
+                                    ->rows(2)
+                                    ->maxLength(500),
+
+                                Forms\Components\Grid::make(3)
+                                    ->schema([
+                                        Forms\Components\Select::make('location')
+                                            ->label('Location')
+                                            ->options(fn () => config('filament-page-builder.menus.locations', [
+                                                'header' => 'Header',
+                                                'footer' => 'Footer',
+                                            ]))
+                                            ->required()
+                                            ->unique(ignoreRecord: true),
+
+                                        Forms\Components\Select::make('status')
+                                            ->label('Status')
+                                            ->options([
+                                                'active' => 'Active',
+                                                'inactive' => 'Inactive',
+                                            ])
+                                            ->default('active')
+                                            ->required(),
+
+                                        Forms\Components\TextInput::make('max_depth')
+                                            ->label('Max Depth')
+                                            ->numeric()
+                                            ->default(3)
+                                            ->minValue(1)
+                                            ->maxValue(5),
+                                    ]),
+                            ]),
+                    ])
+                    ->columnSpan(['lg' => 2]),
+
+                Forms\Components\Section::make('Menu Items')
+                    ->schema([
+                        Forms\Components\ViewField::make('menu_items_builder')
+                            ->view('filament-page-builder::components.menu-items-wrapper')
+                            ->viewData(fn ($record) => ['menu' => $record])
+                            ->hiddenOn('create'),
+                    ])
+                    ->headerActions([
+                        Forms\Components\Actions\Action::make('addMenuItem')
+                            ->label('Add Menu Item')
+                            ->icon('heroicon-o-plus')
+                            ->url(fn ($record) => $record ? \Threls\FilamentPageBuilder\Resources\MenuItemResource::getUrl('create') . '?menu_id=' . $record->id : '#')
+                            ->openUrlInNewTab(false),
+                    ])
+                    ->columnSpan(['lg' => 2])
+                    ->hiddenOn('create'),
+            ])
+            ->columns(4);
     }
 
     public static function table(Table $table): Table
@@ -88,64 +148,6 @@ class MenuResource extends Resource
             'index' => Pages\ListMenus::route('/'),
             'create' => Pages\CreateMenu::route('/create'),
             'edit' => Pages\EditMenu::route('/{record}/edit'),
-        ];
-    }
-
-    public static function getFormSchema(): array
-    {
-        return [
-            Forms\Components\Group::make()
-                ->schema([
-                    Forms\Components\Section::make('Menu Information')
-                        ->schema([
-                            Forms\Components\TextInput::make('name')
-                                ->label('Menu Name')
-                                ->required()
-                                ->maxLength(255),
-
-                            Forms\Components\Textarea::make('description')
-                                ->label('Description')
-                                ->rows(2)
-                                ->maxLength(500),
-
-                            Forms\Components\Grid::make(3)
-                                ->schema([
-                                    Forms\Components\Select::make('location')
-                                        ->label('Location')
-                                        ->options(fn () => config('filament-page-builder.menus.locations', [
-                                            'header' => 'Header',
-                                            'footer' => 'Footer',
-                                        ]))
-                                        ->required()
-                                        ->unique(ignoreRecord: true),
-
-                                    Forms\Components\Select::make('status')
-                                        ->label('Status')
-                                        ->options([
-                                            'active' => 'Active',
-                                            'inactive' => 'Inactive',
-                                        ])
-                                        ->default('active')
-                                        ->required(),
-
-                                    Forms\Components\TextInput::make('max_depth')
-                                        ->label('Max Depth')
-                                        ->numeric()
-                                        ->default(3)
-                                        ->minValue(1)
-                                        ->maxValue(5),
-                                ]),
-                        ]),
-                ])
-                ->columnSpan(['lg' => 1]),
-
-            Forms\Components\Section::make('Menu Items')
-                ->schema([
-                    Forms\Components\ViewField::make('menu_items_builder')
-                        ->view('filament-page-builder::components.menu-items-wrapper')
-                        ->viewData(fn ($record) => ['menu' => $record]),
-                ])
-                ->columnSpan(['lg' => 2]),
         ];
     }
 }

@@ -19,6 +19,7 @@ class PageBuilderPlugin implements Plugin
             ->resources([
                 Resources\PageResource::class,
                 Resources\MenuResource::class,
+                Resources\MenuItemResource::class,
             ])
             ->plugins([
                 FilamentAstrotomicTranslatablePlugin::make(),

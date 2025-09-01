@@ -3,9 +3,12 @@
 namespace Threls\FilamentPageBuilder\Data;
 
 use Illuminate\Support\Collection;
+use Spatie\LaravelData\Attributes\MapName;
 use Spatie\LaravelData\Data;
+use Spatie\LaravelData\Mappers\SnakeCaseMapper;
 use Threls\FilamentPageBuilder\Models\MenuItem;
 
+#[MapName(SnakeCaseMapper::class)]
 class MenuItemData extends Data
 {
     public function __construct(
@@ -15,7 +18,8 @@ class MenuItemData extends Data
         public ?string $url,
         public string $target,
         public ?string $icon,
-        public bool $is_visible,
+        public ?string $iconAlt,
+        public bool $isVisible,
         public int $order,
         /** @var MenuItemData[] */
         public ?Collection $children = null,
@@ -30,7 +34,8 @@ class MenuItemData extends Data
             url: $menuItem->getUrl(),
             target: $menuItem->target,
             icon: $menuItem->getIconUrl(),
-            is_visible: $menuItem->is_visible,
+            iconAlt: $menuItem->getIconAltUrl(),
+            isVisible: $menuItem->is_visible,
             order: $menuItem->order,
             children: $menuItem->children->count() > 0
                 ? self::collect($menuItem->children)
