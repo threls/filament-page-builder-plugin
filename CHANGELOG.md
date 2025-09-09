@@ -2,6 +2,10 @@
 
 All notable changes to `filament-page-builder` will be documented in this file.
 
+## v3.0.2-beta - 2025-09-09
+
+Fixes on import
+
 ## 3.0.1-beta - 2025-09-09
 
 ### What's Changed
