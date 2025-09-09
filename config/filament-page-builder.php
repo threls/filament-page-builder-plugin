@@ -80,4 +80,21 @@ return [
         'can_manage_relationship_types' => env('FILAMENT_PAGE_BUILDER_CAN_MANAGE_REL_TYPES', true),
         'can_manage_compositions' => env('FILAMENT_PAGE_BUILDER_CAN_MANAGE_COMPOSITIONS', true),
     ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Menu Locations
+    |--------------------------------------------------------------------------
+    |
+    | Define available menu locations for your application.
+    | You can add or remove locations as needed.
+    |
+    */
+    'menus' => [
+        'locations' => [
+            'header' => 'Header',
+            'footer' => 'Footer',
+            'sidebar' => 'Sidebar',
+        ],
+    ],
 ];
