@@ -20,6 +20,10 @@ class PageBuilderPlugin implements Plugin
                 Resources\PageResource::class,
                 Resources\MenuResource::class,
                 Resources\MenuItemResource::class,
+                Resources\PageLayoutResource::class,
+                Resources\BlueprintResource::class,
+                Resources\CompositionResource::class,
+                Resources\RelationshipTypeResource::class,
             ])
             ->plugins([
                 FilamentAstrotomicTranslatablePlugin::make(),

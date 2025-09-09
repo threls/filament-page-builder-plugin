@@ -7,37 +7,30 @@ use CactusGalaxy\FilamentAstrotomic\Resources\Concerns\ResourceTranslatable;
 use CactusGalaxy\FilamentAstrotomic\TranslatableTab;
 use Filament\Forms\Components\Builder;
 use Filament\Forms\Components\Builder\Block;
-use Filament\Forms\Components\FileUpload;
-use Filament\Forms\Components\Repeater;
-use Filament\Forms\Components\RichEditor;
+use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
-use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Form;
 use Filament\Forms\Set;
 use Filament\Resources\Resource;
 use Filament\Tables\Actions\Action;
-use Filament\Tables\Actions\BulkActionGroup;
+use Filament\Tables\Actions\ActionGroup;
 use Filament\Tables\Actions\DeleteAction;
-use Filament\Tables\Actions\DeleteBulkAction;
 use Filament\Tables\Actions\EditAction;
-use Filament\Tables\Actions\ForceDeleteBulkAction;
-use Filament\Tables\Actions\RestoreBulkAction;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\TrashedFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
-use Threls\FilamentPageBuilder\Enums\PageLayoutTypesEnum;
-use Threls\FilamentPageBuilder\Enums\PageGridStyleEnum;
-use Threls\FilamentPageBuilder\Enums\PageRelationshipTypeEnum;
 use Threls\FilamentPageBuilder\Enums\PageStatusEnum;
-use Threls\FilamentPageBuilder\Enums\SectionLayoutTypeEnum;
 use Threls\FilamentPageBuilder\Models\Page;
 use Threls\FilamentPageBuilder\Resources\PageResource\Pages\CreatePage;
 use Threls\FilamentPageBuilder\Resources\PageResource\Pages\EditPage;
 use Threls\FilamentPageBuilder\Resources\PageResource\Pages\ListPages;
+use Threls\FilamentPageBuilder\Resources\PageResource\Support\PageBuilderUtils;
+use Threls\FilamentPageBuilder\Resources\PageResource\Support\PageBuilderFormatUtil;
+use Threls\FilamentPageBuilder\Resources\PageResource\Support\PageBuilderDehydrateUtil;
 
 class PageResource extends Resource
 {
@@ -77,12 +70,12 @@ class PageResource extends Resource
                     ->searchable(),
                 TextColumn::make('status')
                     ->badge()
-                    ->color(fn(PageStatusEnum $state): string => match ($state) {
+                    ->color(fn (PageStatusEnum $state): string => match ($state) {
                         PageStatusEnum::DRAFT => 'info',
                         PageStatusEnum::PUBLISHED => 'success',
                         PageStatusEnum::ARCHIVED => 'warning',
                     })
-                    ->formatStateUsing(fn(PageStatusEnum $state): string => $state->name)
+                    ->formatStateUsing(fn (PageStatusEnum $state): string => $state->name)
                     ->searchable(),
                 TextColumn::make('created_at')
                     ->dateTime()
@@ -102,20 +95,32 @@ class PageResource extends Resource
             ])
             ->actions([
                 EditAction::make()->color('info'),
-                Action::make('publish')
-                    ->icon('heroicon-s-check')
-                    ->color('success')
-                    ->requiresConfirmation()
-                    ->action(fn(Page $record) => $record->update(['status' => PageStatusEnum::PUBLISHED])),
-                Action::make('archive')
-                    ->icon('heroicon-s-archive-box-arrow-down')
-                    ->color('warning')
-                    ->requiresConfirmation()
-                    ->action(fn(Page $record) => $record->update(['status' => PageStatusEnum::ARCHIVED])),
-                DeleteAction::make()->disabled(),
+                ActionGroup::make([
+                    Action::make('publish')
+                        ->label(fn (Page $record) => $record->status === PageStatusEnum::PUBLISHED ? 'Unpublish' : 'Publish')
+                        ->icon(fn (Page $record) => $record->status === PageStatusEnum::PUBLISHED ? 'heroicon-s-x-mark' : 'heroicon-s-check')
+                        ->color(fn (Page $record) => $record->status === PageStatusEnum::PUBLISHED ? 'gray' : 'success')
+                        ->visible(fn () => static::canCreate())
+                        ->requiresConfirmation()
+                        ->action(function (Page $record) {
+                            $record->update([
+                                'status' => $record->status === PageStatusEnum::PUBLISHED
+                                    ? PageStatusEnum::DRAFT
+                                    : PageStatusEnum::PUBLISHED,
+                            ]);
+                        }),
+                    Action::make('archive')
+                        ->icon('heroicon-s-archive-box-arrow-down')
+                        ->color('warning')
+                        ->visible(fn (Page $record) => static::canDelete($record))
+                        ->requiresConfirmation()
+                        ->action(fn (Page $record) => $record->update(['status' => PageStatusEnum::ARCHIVED])),
+                    DeleteAction::make()
+                        ->requiresConfirmation()
+                        ->action(fn (Page $record) => $record->update(['status' => PageStatusEnum::ARCHIVED])),
+                ]),
             ]);
     }
-
 
     public static function getPages(): array
     {
@@ -128,14 +133,13 @@ class PageResource extends Resource
 
     public static function canDelete(Model $record): bool
     {
-        return false;
+        return config('filament-page-builder.permissions.can_delete', true);
     }
 
     public static function canCreate(): bool
     {
         return config('filament-page-builder.permissions.can_create', true);
     }
-
 
     public static function getFormSchema(): array
     {
@@ -144,7 +148,7 @@ class PageResource extends Resource
                 ->required()
                 ->maxLength(255)
                 ->live(onBlur: true)
-                ->afterStateUpdated(fn(Set $set, ?string $state) => $set('slug', Str::slug($state))),
+                ->afterStateUpdated(fn (Set $set, ?string $state) => $set('slug', Str::slug($state))),
 
             TextInput::make('slug')
                 ->required()
@@ -153,242 +157,133 @@ class PageResource extends Resource
             Select::make('status')
                 ->label('Status')
                 ->default(PageStatusEnum::DRAFT->value)
-                ->options(collect(PageStatusEnum::cases())->mapWithKeys(fn($case) => [
-                    $case->value => $case->name,
-                ]))->required(),
+                ->options(function (?Page $record) {
+                    return collect(PageStatusEnum::cases())
+                        ->mapWithKeys(fn ($case) => [
+                            $case->value => Str::title($case->name),
+                        ])->toArray();
+                })
+                ->disableOptionWhen(function (?Page $record, string $value): bool {
+                    if (! $record || $record->status !== PageStatusEnum::PUBLISHED) {
+                        return false;
+                    }
 
+                    if ($value === PageStatusEnum::ARCHIVED->value && ! static::canDelete($record)) {
+                        return true;
+                    }
+
+                    if ($value === PageStatusEnum::DRAFT->value && ! static::canCreate()) {
+                        return true;
+                    }
+
+                    return false;
+                })
+                ->required(),
 
             Section::make('Page builder')
                 ->schema([
                     TranslatableTabs::make()
-                        ->localeTabSchema(fn(TranslatableTab $tab) => [
+                        ->localeTabSchema(fn (TranslatableTab $tab) => [
                             Builder::make($tab->makeName('content'))
-                                ->label('Content')
-                                ->generateUuidUsing(false)
-                                ->reorderableWithDragAndDrop(false)
+                                ->hiddenLabel()
+                                ->addActionLabel('Add a section layout')
+                                ->reorderableWithDragAndDrop(false) // TODO: try upgrading to latest filament - issues with dragging at the moment
                                 ->reorderableWithButtons()
-                                ->addBetweenAction(fn (\Filament\Forms\Components\Actions\Action $action) => $action->hidden())
-                                ->blocks([
-                                    Block::make(PageLayoutTypesEnum::HERO_SECTION->value)
-                                        ->schema([
-                                            TextInput::make('title')
-                                                ->required($tab->isMainLocale()),
-                                            TextInput::make('subtitle'),
+                                ->formatStateUsing(fn ($state) => PageBuilderFormatUtil::formatBuilderStateForEdit($state, 'Layout'))
+                                ->dehydrateStateUsing(fn ($state) => PageBuilderDehydrateUtil::dehydrateBuilderStateForSave($state))
+                                ->blockNumbers(false)
+                                ->blocks(function () use ($tab) {
+                                    // Build available blocks and layouts only once per request for performance.
+                                    $availableBlueprintBlocks = PageBuilderFormatUtil::getAvailableBlueprintBlocks();
+                                    $layouts = PageBuilderUtils::getAllLayoutsWithColumns();
+                                    $compositionBlocks = PageBuilderFormatUtil::getCompositionBlocks();
 
-                                            FileUpload::make('image')
-                                                ->panelLayout('grid')
-                                                ->directory('page-builder')
-                                                ->image()
-                                                ->nullable()
-                                                ->disk(config('filament-page-builder.disk')),
+                                    // Build layout blocks for nested usage inside columns (recursive palette).
+                                    $buildLayoutBlocks = function () use (&$buildLayoutBlocks, $layouts, $tab) {
+                                        $nestedLayoutBlocks = [];
+                                        foreach ($layouts as $nestedLayout) {
+                                            $nestedSchema = [
+                                                // Persist the selected layout id in state (also inferred from type on dehydrate)
+                                                Hidden::make('layout_id')->default($nestedLayout->id),
+                                            ];
 
-                                            FileUpload::make('sticker')
-                                                ->panelLayout('grid')
-                                                ->directory('page-builder')
-                                                ->image()
-                                                ->nullable()
-                                                ->disk(config('filament-page-builder.disk')),
+                                            foreach ($nestedLayout->columns as $nestedCol) {
+                                                $nestedLabel = $nestedCol->name ?: ('Column ' . ($nestedCol->key ?? $nestedCol->index));
+                                                $nestedSchema[] = Section::make($nestedLabel)
+                                                    ->schema([
+                                                        // Nested column builder supports both blueprint components and further layout sections
+                                                        Builder::make('columns.' . $nestedCol->id)
+                                                            ->label('Components')
+                                                            ->hiddenLabel()
+                                                            ->dehydrateStateUsing(fn ($state) => PageBuilderDehydrateUtil::dehydrateBuilderStateForSave($state))
+                                                            ->blocks(function () use ($tab, &$buildLayoutBlocks) {
+                                                                $blueprint = PageBuilderFormatUtil::getAvailableBlueprintBlocks();
+                                                                $layoutsPalette = $buildLayoutBlocks();
+                                                                return array_merge($layoutsPalette, $blueprint);
+                                                            })
+                                                            ->blockNumbers(false)
+                                                            ->reorderableWithButtons()
+                                                            ->reorderableWithDragAndDrop(false)
+                                                            ->addActionLabel('Add component in column'),
+                                                    ]);
+                                            }
 
-                                            TextInput::make('button-text'),
-                                            TextInput::make('button-path'),
-                                        ])
-                                        ->columns(),
+                                            $nestedLayoutBlocks[] = Block::make('layout_section:' . $nestedLayout->id)
+                                                ->label('Layout · ' . $nestedLayout->name)
+                                                ->schema($nestedSchema);
+                                        }
 
-                                    Block::make(PageLayoutTypesEnum::IMAGE_GALLERY->value)
-                                        ->schema([
-                                            TextInput::make('text'),
-                                            FileUpload::make('images')
-                                                ->panelLayout('grid')
-                                                ->directory('page-builder')
-                                                ->multiple()
-                                                ->reorderable()
-                                                ->image()
-                                                ->required($tab->isMainLocale())
-                                                ->disk(config('filament-page-builder.disk')),
+                                        return $nestedLayoutBlocks;
+                                    };
 
-                                            TextInput::make('button-text'),
-                                            TextInput::make('button-path'),
-                                        ]),
+                                    // Palette for column builders at the top level: layouts first, then blueprint components
+                                    $availableForColumns = array_merge($buildLayoutBlocks(), $availableBlueprintBlocks);
+                                    // Root palette: compositions first, then layouts
+                                    $blocks = [];
+                                    foreach ($compositionBlocks as $cb) {
+                                        $blocks[] = $cb;
+                                    }
+                                    foreach ($layouts as $layout) {
+                                        $schema = [
+                                            // Persist the selected layout id in state (also inferred from type on dehydrate)
+                                            Hidden::make('layout_id')->default($layout->id),
+                                        ];
 
-                                    // Block::make(PageLayoutTypesEnum::IMAGE_CARDS->value)
-                                    //     ->schema([
-                                    //         TextInput::make('title')->nullable(),
-                                    //         Repeater::make('group')->schema([
-                                    //             TextInput::make('text'),
-                                    //             FileUpload::make('image')
-                                    //                 ->directory('page-builder')
-                                    //                 ->panelLayout('grid')
-                                    //                 ->image()
-                                    //                 ->required($tab->isMainLocale())
-                                    //                 ->disk(config('filament-page-builder.disk')),
-                                    //             TextInput::make('button-text'),
-                                    //             TextInput::make('button-path'),
-                                    //         ]),
-                                    //     ]),
+                                        foreach ($layout->columns as $i => $col) {
+                                            $label = $col->name ?: ('Column ' . ($col->key ?? $col->index));
 
-                                    // Block::make(PageLayoutTypesEnum::HORIZONTAL_TICKER->value)
-                                    //     ->schema([
-                                    //         TextInput::make('title')->nullable(),
-                                    //         Repeater::make('group')
-                                    //             ->schema([
-                                    //                 TextInput::make('title')
-                                    //                     ->required($tab->isMainLocale()),
-                                    //                 Textarea::make('description')
-                                    //                     ->nullable(),
-                                    //
-                                    //                 FileUpload::make('images')
-                                    //                     ->panelLayout('grid')
-                                    //                     ->directory('page-builder')
-                                    //                     ->multiple()
-                                    //                     ->reorderable()
-                                    //                     ->image()
-                                    //                     ->required($tab->isMainLocale())
-                                    //                     ->disk(config('filament-page-builder.disk')),
-                                    //             ])
-                                    //             ->columns(),
-                                    //     ]),
-
-                                    Block::make(PageLayoutTypesEnum::BANNER->value)
-                                        ->schema([
-                                            TextInput::make('title')
-                                                ->nullable(),
-                                            TextInput::make('text')
-                                                ->nullable(),
-                                            RichEditor::make('description')
-                                                ->nullable(),
-                                            FileUpload::make('background-image')
-                                                ->panelLayout('grid')
-                                                ->directory('page-builder')
-                                                ->image()
-                                                ->nullable()
-                                                ->disk(config('filament-page-builder.disk')),
-                                            FileUpload::make('image')
-                                                ->panelLayout('grid')
-                                                ->directory('page-builder')
-                                                ->image()
-                                                ->nullable()
-                                                ->disk(config('filament-page-builder.disk')),
-
-                                            TextInput::make('button-text'),
-                                            TextInput::make('button-path'),
-                                        ]),
-
-                                    Block::make(PageLayoutTypesEnum::RICH_TEXT_PAGE->value)
-                                        ->schema([
-                                            TextInput::make('title')
-                                                ->required($tab->isMainLocale()),
-                                            RichEditor::make('content')
-                                                ->required($tab->isMainLocale()),
-                                        ]),
-                                    Block::make(PageLayoutTypesEnum::IMAGE_AND_RICH_TEXT->value)
-                                        ->schema([
-                                            Select::make('variant')
-                                                ->label('Variant')
-                                                ->default(SectionLayoutTypeEnum::IMAGE_LEFT_TEXT_RIGHT->value)
-                                                ->options(collect(SectionLayoutTypeEnum::cases())->mapWithKeys(fn($case) => [
-                                                    $case->value => $case->name,
-                                                ]))->required($tab->isMainLocale()),
-                                            TextInput::make('title')
-                                                ->nullable(),
-                                            FileUpload::make('image')
-                                                ->panelLayout('grid')
-                                                ->directory('page-builder')
-                                                ->image()
-                                                ->required($tab->isMainLocale())
-                                                ->disk(config('admin.page_builder_disk')),
-
-                                            FileUpload::make('sticker')
-                                                ->panelLayout('grid')
-                                                ->directory('page-builder')
-                                                ->image()
-                                                ->nullable()
-                                                ->disk(config('filament-page-builder.disk')),
-
-                                            FileUpload::make('background-image')
-                                                ->panelLayout('grid')
-                                                ->directory('page-builder')
-                                                ->image()
-                                                ->nullable()
-                                                ->disk(config('filament-page-builder.disk')),
-                                            RichEditor::make('content')
-                                                ->required(),
-                                        ]),
-
-
-                                    Block::make(PageLayoutTypesEnum::KEY_VALUE_SECTION->value)
-                                        ->schema([
-                                            Select::make('variant')
-                                                ->label('Variant')
-                                                ->default(PageGridStyleEnum::NORMAL_GRID->value)
-                                                ->options(collect(PageGridStyleEnum::cases())->mapWithKeys(fn($case) => [
-                                                    $case->value => $case->name,
-                                                ]))->required($tab->isMainLocale()),
-                                            TextInput::make('title')
-                                                ->nullable(),
-                                            Repeater::make('group')
+                                            $schema[] = Section::make($label)
                                                 ->schema([
-                                                    TextInput::make('title')
-                                                        ->live(onBlur: true)
-                                                        ->afterStateUpdated(fn(Set $set, ?string $state) => $set('key', Str::slug($state)))
-                                                        ->required($tab->isMainLocale()),
-                                                    TextInput::make('key')
-                                                        ->readOnly(),
-                                                    RichEditor::make('description')
-                                                        ->required($tab->isMainLocale()),
-                                                    TextInput::make('hint')
-                                                        ->nullable(),
-                                                    FileUpload::make('image')
-                                                        ->panelLayout('grid')
-                                                        ->directory('page-builder')
-                                                        ->image()
-                                                        ->nullable()
-                                                        ->disk(config('filament-page-builder.disk')),
-                                                ])->columns(),
-                                        ]),
+                                                    // Bind directly to the persisted columns map by column id
+                                                    Builder::make('columns.' . $col->id)
+                                                        ->label('Components')
+                                                        ->hiddenLabel()
+                                                        ->dehydrateStateUsing(fn ($state) => PageBuilderDehydrateUtil::dehydrateBuilderStateForSave($state))
+                                                        ->blocks($availableForColumns)
+                                                        ->blockNumbers(false)
+                                                        ->reorderableWithButtons()
+                                                        ->reorderableWithDragAndDrop(false)
+                                                        ->addActionLabel('Add component in column'),
+                                                ]);
+                                        }
 
-                                    // Block::make(PageLayoutTypesEnum::MAP_LOCATION->value)
-                                    //     ->schema([
-                                    //         TextInput::make('title')
-                                    //             ->required($tab->isMainLocale()),
-                                    //         TextInput::make('latitude')->required(),
-                                    //         TextInput::make('longitude')->required(),
-                                    //         TextInput::make('address'),
-                                    //     ]),
-
-                                    Block::make(PageLayoutTypesEnum::RELATIONSHIP_CONTENT->value)
-                                        ->schema([
-                                            Select::make('relationship')
-                                                ->options(collect(PageRelationshipTypeEnum::cases())->mapWithKeys(fn($case) => [
-                                                    $case->value => $case->name,
-                                                ]))
-                                                ->required($tab->isMainLocale())
-                                                ->searchable(),
-                                        ]),
-
-                                    Block::make(PageLayoutTypesEnum::DIVIDER->value)
-                                        ->schema([
-                                        ]),
-
-                                    Block::make(PageLayoutTypesEnum::VIDEO_EMBEDDER->value)
-                                        ->schema([
-                                            TextInput::make('title')
-                                                ->nullable(),
-                                            FileUpload::make('video')
-                                                ->panelLayout('grid')
-                                                ->directory('page-builder')
-                                                ->acceptedFileTypes(['video/mp4', 'video/avi', 'video/mpeg', 'video/quicktime'])
-                                                ->disk(config('admin.page_builder_disk'))
-                                                ->maxSize(20048)
-                                                ->nullable()
-                                                ->requiredWithout('external_url'),
-                                            TextInput::make('external_url')
-                                                ->nullable()
-                                                ->requiredWithout('video')
-                                        ]),
-                                ]),
+                                        $blocks[] = Block::make('layout_section:' . $layout->id)
+                                            ->label('Layout · ' . $layout->name)
+                                            ->schema($schema);
+                                    }
+                                    return $blocks;
+                                }),
                         ]),
-
                 ]),
+
         ];
     }
+
+
+
+
+
+
+
+
 }
