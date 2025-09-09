@@ -2,6 +2,14 @@
 
 All notable changes to `filament-page-builder` will be documented in this file.
 
+## 3.0.1-beta - 2025-09-09
+
+### What's Changed
+
+* implement menu builder by @ableta in https://github.com/threls/filament-page-builder-plugin/pull/9
+
+**Full Changelog**: https://github.com/threls/filament-page-builder-plugin/compare/3.0.0-beta...3.0.1-beta
+
 ## 3.0.0-beta - 2025-08-28
 
 ### What's Changed
