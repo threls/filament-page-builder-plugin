@@ -3,6 +3,7 @@
 namespace Threls\FilamentPageBuilder;
 
 use Astrotomic\Translatable\TranslatableServiceProvider;
+use Livewire\Livewire;
 use Spatie\LaravelPackageTools\Package;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
 use Threls\FilamentPageBuilder\Http\Middleware\SetApiLocale;
