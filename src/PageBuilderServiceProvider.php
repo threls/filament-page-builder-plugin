@@ -23,6 +23,9 @@ class PageBuilderServiceProvider extends PackageServiceProvider
                 // Core plugin tables
                 'create_pages_table',
                 'create_page_translations_table',
+                'create_menus_table',
+                'create_menu_items_table',
+                'create_menu_item_translations_table',
                 'create_page_layouts_table',
                 'create_page_layout_columns_table',
                 // Blueprint system tables
@@ -34,8 +37,7 @@ class PageBuilderServiceProvider extends PackageServiceProvider
                 // Spatie Media Library table
                 'create_media_table',
             ])
-            ->publishesServiceProvider(TranslatableServiceProvider::class)
-        ;
+            ->publishesServiceProvider(TranslatableServiceProvider::class);
     }
 
     public function packageRegistered(): void
@@ -51,6 +53,7 @@ class PageBuilderServiceProvider extends PackageServiceProvider
         parent::packageBooted();
 
         $this->registerRoutes();
+        $this->registerLivewireComponents();
     }
 
     protected function registerRoutes(): void
@@ -58,5 +61,10 @@ class PageBuilderServiceProvider extends PackageServiceProvider
         if (config('filament-page-builder.api.enabled', true)) {
             $this->loadRoutesFrom(__DIR__ . '/../routes/api.php');
         }
+    }
+
+    protected function registerLivewireComponents(): void
+    {
+        Livewire::component('menu-items-builder', \Threls\FilamentPageBuilder\Livewire\MenuItemsBuilder::class);
     }
 }
