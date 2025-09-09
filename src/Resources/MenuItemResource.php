@@ -2,6 +2,7 @@
 
 namespace Threls\FilamentPageBuilder\Resources;
 
+use CactusGalaxy\FilamentAstrotomic\Resources\Concerns\ResourceTranslatable;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Forms\Get;
@@ -9,13 +10,15 @@ use Filament\Forms\Set;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 use Threls\FilamentPageBuilder\Models\MenuItem;
 use Threls\FilamentPageBuilder\Models\Page;
 use Threls\FilamentPageBuilder\Resources\MenuItemResource\Pages;
-use Illuminate\Database\Eloquent\Builder;
 
 class MenuItemResource extends Resource
 {
+    use ResourceTranslatable;
+
     protected static ?string $model = MenuItem::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-bars-3-bottom-left';
@@ -34,148 +37,141 @@ class MenuItemResource extends Resource
     public static function form(Form $form): Form
     {
         return $form
-            ->schema([
-                Forms\Components\Section::make('Basic Information')
-                    ->schema([
-                        Forms\Components\Select::make('menu_id')
-                            ->label('Menu')
-                            ->relationship('menu', 'name')
-                            ->required()
-                            ->searchable()
-                            ->preload()
-                            ->columnSpan(1),
+            ->schema(
+                self::getFormSchema()
+            );
+    }
 
-                        Forms\Components\Select::make('type')
-                            ->label('Link Type')
-                            ->options([
-                                'parent' => 'Parent (No Link)',
-                                'page' => 'Page',
-                                'internal' => 'Internal Link',
-                                'external' => 'External Link',
-                            ])
-                            ->required()
-                            ->reactive()
-                            ->afterStateUpdated(fn (Set $set) => $set('page_id', null))
-                            ->columnSpan(1),
+    public static function getFormSchema(): array
+    {
+        return [
+            Forms\Components\Section::make('Basic Information')
+                ->schema([
+                    Forms\Components\Select::make('menu_id')
+                        ->label('Menu')
+                        ->relationship('menu', 'name')
+                        ->required()
+                        ->searchable()
+                        ->preload()
+                        ->columnSpan(1),
 
-                        Forms\Components\Select::make('page_id')
-                            ->label('Page')
-                            ->options(Page::query()->pluck('title', 'id'))
-                            ->searchable()
-                            ->visible(fn (Get $get): bool => $get('type') === 'page')
-                            ->required(fn (Get $get): bool => $get('type') === 'page')
-                            ->columnSpan(1),
+                    Forms\Components\Select::make('type')
+                        ->label('Link Type')
+                        ->options([
+                            'parent' => 'Parent (No Link)',
+                            'page' => 'Page',
+                            'internal' => 'Internal Link',
+                            'external' => 'External Link',
+                        ])
+                        ->required()
+                        ->reactive()
+                        ->afterStateUpdated(fn (Set $set) => $set('page_id', null))
+                        ->columnSpan(1),
 
-                        Forms\Components\Select::make('parent_id')
-                            ->label('Parent Item')
-                            ->options(function (Get $get, ?MenuItem $record) {
-                                $menuId = $get('menu_id');
-                                if (!$menuId) return [];
+                    Forms\Components\Select::make('page_id')
+                        ->label('Page')
+                        ->options(Page::query()->pluck('title', 'id'))
+                        ->searchable()
+                        ->visible(fn (Get $get): bool => $get('type') === 'page')
+                        ->required(fn (Get $get): bool => $get('type') === 'page')
+                        ->columnSpan(1),
 
-                                return MenuItem::query()
-                                    ->where('menu_id', $menuId)
-                                    ->when($record, fn($query) => $query->where('id', '!=', $record->id))
-                                    ->whereNull('parent_id')
-                                    ->with('translations')
-                                    ->get()
-                                    ->mapWithKeys(function ($item) {
-                                        return [$item->id => $item->name ?? 'Untitled'];
-                                    });
-                            })
-                            ->searchable()
-                            ->columnSpan(1),
+                    Forms\Components\Select::make('parent_id')
+                        ->label('Parent Item')
+                        ->options(function (Get $get, ?MenuItem $record) {
+                            $menuId = $get('menu_id');
+                            if (! $menuId) {
+                                return [];
+                            }
 
-                        Forms\Components\Select::make('target')
-                            ->label('Open In')
-                            ->options([
-                                '_self' => 'Same Window',
-                                '_blank' => 'New Window',
-                            ])
-                            ->default('_self')
-                            ->visible(fn (Get $get): bool => $get('type') !== 'parent')
-                            ->columnSpan(1),
+                            return MenuItem::query()
+                                ->where('menu_id', $menuId)
+                                ->when($record, fn ($query) => $query->where('id', '!=', $record->id))
+                                ->whereNull('parent_id')
+                                ->with('translations')
+                                ->get()
+                                ->mapWithKeys(function ($item) {
+                                    return [$item->id => $item->name ?? 'Untitled'];
+                                });
+                        })
+                        ->searchable()
+                        ->columnSpan(1),
 
-                        Forms\Components\TextInput::make('order')
-                            ->label('Order')
-                            ->numeric()
-                            ->default(1)
-                            ->columnSpan(1),
+                    Forms\Components\Select::make('target')
+                        ->label('Open In')
+                        ->options([
+                            '_self' => 'Same Window',
+                            '_blank' => 'New Window',
+                        ])
+                        ->default('_self')
+                        ->visible(fn (Get $get): bool => $get('type') !== 'parent')
+                        ->columnSpan(1),
 
-                        Forms\Components\Toggle::make('is_visible')
-                            ->label('Visible')
-                            ->default(true)
-                            ->columnSpan(1),
+                    Forms\Components\TextInput::make('order')
+                        ->label('Order')
+                        ->numeric()
+                        ->default(1)
+                        ->columnSpan(1),
 
-                        Forms\Components\Grid::make(2)
-                            ->schema([
-                                Forms\Components\FileUpload::make('icon')
-                                    ->label('Icon')
-                                    ->image()
-                                    ->maxSize(1024)
-                                    ->imageResizeMode('cover')
-                                    ->imageCropAspectRatio('1:1')
-                                    ->imageResizeTargetWidth('64')
-                                    ->imageResizeTargetHeight('64')
-                                    ->disk('public')
-                                    ->directory('menu-icons'),
+                    Forms\Components\Toggle::make('is_visible')
+                        ->label('Visible')
+                        ->default(true)
+                        ->columnSpan(1),
 
-                                Forms\Components\FileUpload::make('icon_alt')
-                                    ->label('Alternative Icon (Hover/Active)')
-                                    ->image()
-                                    ->maxSize(1024)
-                                    ->imageResizeMode('cover')
-                                    ->imageCropAspectRatio('1:1')
-                                    ->imageResizeTargetWidth('64')
-                                    ->imageResizeTargetHeight('64')
-                                    ->disk('public')
-                                    ->directory('menu-icons'),
-                            ])
-                            ->columnSpan('full'),
-                    ])
-                    ->columns(3),
+                    Forms\Components\Grid::make(2)
+                        ->schema([
+                            Forms\Components\FileUpload::make('icon')
+                                ->label('Icon')
+                                ->image()
+                                ->maxSize(1024)
+                                ->imageResizeMode('cover')
+                                ->imageCropAspectRatio('1:1')
+                                ->imageResizeTargetWidth('64')
+                                ->imageResizeTargetHeight('64')
+                                ->disk('public')
+                                ->directory('menu-icons'),
 
-                Forms\Components\Section::make('Content')
-                    ->schema([
-                        Forms\Components\TextInput::make('translations.name')
-                            ->label('Name')
-                            ->required()
-                            ->maxLength(255)
-                            ->dehydrateStateUsing(function ($state, $record) {
-                                if ($record) {
-                                    $record->translateOrNew(app()->getLocale())->name = $state;
-                                    $record->save();
-                                }
-                                return $state;
-                            })
-                            ->afterStateHydrated(function ($component, $record) {
-                                if ($record && $record->translate()) {
-                                    $component->state($record->translate()->name);
-                                }
-                            }),
+                            Forms\Components\FileUpload::make('icon_alt')
+                                ->label('Alternative Icon (Hover/Active)')
+                                ->image()
+                                ->maxSize(1024)
+                                ->imageResizeMode('cover')
+                                ->imageCropAspectRatio('1:1')
+                                ->imageResizeTargetWidth('64')
+                                ->imageResizeTargetHeight('64')
+                                ->disk('public')
+                                ->directory('menu-icons'),
+                        ])
+                        ->columnSpan('full'),
+                ])
+                ->columns(3),
 
-                        Forms\Components\TextInput::make('translations.url')
-                            ->label('URL')
-                            ->maxLength(500)
-                            ->visible(fn (Get $get): bool => in_array($get('type'), ['internal', 'external']))
-                            ->required(fn (Get $get): bool => in_array($get('type'), ['internal', 'external']))
-                            ->url(fn (Get $get): bool => $get('type') === 'external')
-                            ->placeholder(fn (Get $get): string =>
-                                $get('type') === 'external' ? 'https://example.com' : '/contact-us'
-                            )
-                            ->dehydrateStateUsing(function ($state, $record) {
-                                if ($record) {
-                                    $record->translateOrNew(app()->getLocale())->url = $state;
-                                    $record->save();
-                                }
-                                return $state;
-                            })
-                            ->afterStateHydrated(function ($component, $record) {
-                                if ($record && $record->translate()) {
-                                    $component->state($record->translate()->url);
-                                }
-                            }),
-                    ]),
-            ]);
+            Forms\Components\Section::make('Content')
+                ->schema([
+                    Forms\Components\Tabs::make('Translations')
+                        ->tabs(
+                            collect(config('translatable.locales', ['en']))
+                                ->map(function ($locale) {
+                                    $isDefault = $locale === config('translatable.fallback_locale', 'en');
+                                    $label = strtoupper($locale);
+
+                                    return Forms\Components\Tabs\Tab::make($locale)
+                                        ->label($label)
+                                        ->schema([
+                                            Forms\Components\TextInput::make("{$locale}.name")
+                                                ->label('Name')
+                                                ->required($isDefault)
+                                                ->maxLength(255),
+
+                                            Forms\Components\TextInput::make("{$locale}.url")
+                                                ->label('URL')
+                                                ->maxLength(500),
+                                        ]);
+                                })
+                                ->toArray()
+                        ),
+                ]),
+        ];
     }
 
     public static function table(Table $table): Table
@@ -205,6 +201,7 @@ class MenuItemResource extends Resource
                     ->getStateUsing(function (MenuItem $record): string {
                         $depth = $record->getDepth();
                         $prefix = str_repeat('— ', $depth);
+
                         return $prefix . ($record->name ?? 'Untitled');
                     })
                     ->searchable()
@@ -280,7 +277,7 @@ class MenuItemResource extends Resource
                             $newOrder = MenuItem::where('parent_id', $previousSibling->id)->max('order') + 1;
                             $record->update([
                                 'parent_id' => $previousSibling->id,
-                                'order' => $newOrder ?? 1
+                                'order' => $newOrder ?? 1,
                             ]);
                             static::reorderSiblings($record->menu_id, $previousSibling->parent_id);
                         }
@@ -292,7 +289,7 @@ class MenuItemResource extends Resource
                             ->orderBy('order', 'desc')
                             ->first();
 
-                        if (!$previousSibling) {
+                        if (! $previousSibling) {
                             return false;
                         }
 
@@ -311,7 +308,7 @@ class MenuItemResource extends Resource
                             $oldParentId = $record->parent_id;
                             $record->update([
                                 'parent_id' => $parent->parent_id,
-                                'order' => $parent->order + 1
+                                'order' => $parent->order + 1,
                             ]);
                             static::reorderSiblings($record->menu_id, $oldParentId);
                             static::reorderSiblings($record->menu_id, $parent->parent_id);
