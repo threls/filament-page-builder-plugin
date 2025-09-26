@@ -2,12 +2,15 @@
 
 namespace Threls\FilamentPageBuilder\Resources\MenuItemResource\Pages;
 
+use CactusGalaxy\FilamentAstrotomic\Resources\Pages\Record\EditTranslatable;
 use Filament\Actions;
 use Filament\Resources\Pages\EditRecord;
 use Threls\FilamentPageBuilder\Resources\MenuItemResource;
 
 class EditMenuItem extends EditRecord
 {
+    use EditTranslatable;
+
     protected static string $resource = MenuItemResource::class;
 
     protected function getHeaderActions(): array
