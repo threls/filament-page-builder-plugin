@@ -2,6 +2,10 @@
 
 All notable changes to `filament-page-builder` will be documented in this file.
 
+## v3.0.4-beta - 2025-09-26
+
+**Full Changelog**: https://github.com/threls/filament-page-builder-plugin/compare/v3.0.3-beta...v3.0.4-beta
+
 ## v3.0.3-beta - 2025-09-09
 
 Fixing translations on menu-item
