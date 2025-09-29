@@ -29,7 +29,7 @@ class MenuItemData extends Data
     {
         return new self(
             id: $menuItem->id,
-            name: $menuItem->name,
+            name: $menuItem->name ?? 'Untitled',
             type: $menuItem->type,
             url: $menuItem->getUrl(),
             target: $menuItem->target,

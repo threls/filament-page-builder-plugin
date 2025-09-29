@@ -10,7 +10,7 @@
 
             <div class="flex-1">
                 <div class="font-medium text-gray-900 dark:text-gray-100">
-                    {{ str_repeat('— ', $depth) }}{{ $item->name ?? 'Untitled' }}
+                    {{ $item->name ?? 'Untitled' }}
                 </div>
                 <div class="text-sm text-gray-500 dark:text-gray-400">
                     {{ ucfirst($item->type) }}
@@ -29,31 +29,10 @@
                 $menuItems = \Threls\FilamentPageBuilder\Models\MenuItem::where('menu_id', $item->menu_id)->get();
             }
             $siblings = $menuItems->where('parent_id', $item->parent_id);
-            $canMoveUp = $siblings->where('order', '<', $item->order)->isNotEmpty();
-            $canMoveDown = $siblings->where('order', '>', $item->order)->isNotEmpty();
-            $canIndent = $canMoveUp && $item->getDepth() < ($item->menu->max_depth - 1);
+            $canIndent = $siblings->where('order', '<', $item->order)->isNotEmpty() && $item->getDepth() < ($item->menu->max_depth - 1);
         @endphp
 
         <div class="flex items-center space-x-1">
-            @if($canMoveUp)
-                <button wire:click="reorder([{{ $item->id }}], {{ $item->parent_id }})"
-                        class="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
-                        title="Move Up">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"/>
-                    </svg>
-                </button>
-            @endif
-
-            @if($canMoveDown)
-                <button wire:click="reorder([{{ $item->id }}], {{ $item->parent_id }})"
-                        class="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
-                        title="Move Down">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
-                    </svg>
-                </button>
-            @endif
 
             @if($canIndent)
                 <button wire:click="indent({{ $item->id }})"
@@ -94,15 +73,13 @@
         </div>
     </div>
 
-    @if($item->children->count() > 0)
-        <ul class="mt-3 space-y-2 ml-6">
-            @foreach($item->children->sortBy('order') as $child)
-                @include('filament-page-builder::components.menu-item-row', [
-                    'item' => $child,
-                    'menuItems' => $menuItems,
-                    'depth' => $depth + 1
-                ])
-            @endforeach
-        </ul>
-    @endif
+    <ul class="mt-3 space-y-2 ml-6 min-h-[8px]" id="menu-items-{{ $item->id }}" data-parent-id="{{ $item->id }}" data-depth="{{ $depth + 1 }}" data-max-depth="{{ $item->menu->max_depth }}">
+        @foreach($item->children->sortBy('order') as $child)
+            @include('filament-page-builder::components.menu-item-row', [
+                'item' => $child,
+                'menuItems' => $menuItems,
+                'depth' => $depth + 1
+            ])
+        @endforeach
+    </ul>
 </li>
