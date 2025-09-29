@@ -2,7 +2,6 @@
 
 namespace Threls\FilamentPageBuilder\Resources\PageResource\Support;
 
-use CactusGalaxy\FilamentAstrotomic\TranslatableTab;
 use Filament\Forms\Components\Builder\Block;
 use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\FileUpload;
@@ -16,9 +15,34 @@ use Filament\Forms\Components\Toggle;
 use Threls\FilamentPageBuilder\Enums\BlueprintFieldTypeEnum;
 use Illuminate\Support\Str;
 use Threls\FilamentPageBuilder\Models\RelationshipType;
+use Threls\FilamentPageBuilder\Models\BlueprintVersion;
 
 class PageBuilderFormatUtil
 {
+    /**
+     * Tracks blueprint version IDs encountered in the current page state so that
+     * deprecated or older versions referenced by the page remain available in the palette.
+     *
+     * @var array<int, true>
+     */
+    protected static array $encounteredVersionIds = [];
+
+    protected static function rememberBlueprintVersionId(?int $id): void
+    {
+        if ($id && $id > 0) {
+            self::$encounteredVersionIds[$id] = true;
+        }
+    }
+
+    /**
+     * Returns the list of encountered blueprint version IDs during this request lifecycle.
+     *
+     * @return int[]
+     */
+    protected static function getEncounteredBlueprintVersionIds(): array
+    {
+        return array_map('intval', array_keys(self::$encounteredVersionIds));
+    }
     public static function formatBuilderStateForEdit(mixed $state, string $log): mixed
     {
         if (! is_array($state)) {
@@ -108,6 +132,8 @@ class PageBuilderFormatUtil
             if ($versionId) {
                 // Use version-specific block type to ensure old pages keep their versions until edited.
                 $block['type'] = 'blueprint_version:' . (int) $versionId;
+                // Track encountered version so it's available in the palette even if deprecated.
+                self::rememberBlueprintVersionId((int) $versionId);
             }
 
             // Ensure a stable instance id is present during edit by copying persisted instance_key
@@ -277,12 +303,32 @@ class PageBuilderFormatUtil
 
     public static function getBlueprintBlocks(): array
     {
-        // Only list latest published version per blueprint for new additions.
+        // Start with the latest published version per blueprint for new additions.
         $versions = PageBuilderUtils::getPublishedBlueprintVersions();
         $latestByBlueprint = $versions
             ->groupBy('blueprint_id')
             ->map(fn ($group) => $group->sortByDesc('version')->first())
             ->values();
+
+        // Track the latest published version per blueprint (by version number) for deprecation labels.
+        $latestPublishedVersionPerBlueprint = $versions
+            ->groupBy('blueprint_id')
+            ->map(fn ($group) => (int) $group->max('version'));
+
+        // Ensure any versions already used in the current page are also available in the palette,
+        // even if they are older or deprecated.
+        $encounteredIds = self::getEncounteredBlueprintVersionIds();
+        if (! empty($encounteredIds)) {
+            $extra = BlueprintVersion::query()
+                ->with('blueprint')
+                ->whereIn('id', $encounteredIds)
+                ->get();
+            // Merge, de-duplicating by id.
+            $latestByBlueprint = $latestByBlueprint
+                ->concat($extra)
+                ->unique('id')
+                ->values();
+        }
 
         $sorted = $latestByBlueprint->sortBy(function ($bv) {
             $catKey = PageBuilderUtils::normalizeCategoryKey($bv->blueprint?->category ?? null);
@@ -292,9 +338,9 @@ class PageBuilderFormatUtil
 
         $blocks = [];
         foreach ($sorted as $bv) {
-            $categoryLabel = PageBuilderUtils::humanizeCategory($bv->blueprint?->category ?? null);
-            $name = $bv->blueprint?->name ?? 'Blueprint';
-            $label = sprintf('%s · %s', $categoryLabel, $name);
+            $bpId = (int) ($bv->blueprint_id ?? 0);
+            $latestPub = $latestPublishedVersionPerBlueprint[$bpId] ?? null;
+            $label = PageBuilderUtils::formatBlueprintVersionLabel($bv, $latestPub);
             $fields = self::getBlueprintFieldsSchema($bv->id);
             // Include a stable hidden instance id at the block root so it persists across reorders
             array_unshift($fields, Hidden::make('instance_id')->default(fn () => (string) Str::uuid()));

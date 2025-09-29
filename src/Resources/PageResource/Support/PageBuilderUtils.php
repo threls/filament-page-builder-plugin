@@ -79,4 +79,25 @@ class PageBuilderUtils
         $c = trim((string) ($category ?: 'Uncategorized'));
         return ucwords(strtolower($c));
     }
+
+    /**
+     * Build the label for a blueprint version block for the editor palette.
+     * If a category exists, prefixes with "Category · Name"; otherwise uses just the name.
+     * Appends " (deprecated)" when the provided latest published version for the same blueprint
+     * is greater than the current version number.
+     */
+    public static function formatBlueprintVersionLabel(BlueprintVersion $bv, ?int $latestPublishedVersionForBlueprint = null): string
+    {
+        $category = $bv->blueprint?->category ?? null;
+        $categoryLabel = self::humanizeCategory($category);
+        $name = $bv->blueprint?->name ?? 'Blueprint';
+        $label = $category ? sprintf('%s · %s', $categoryLabel, $name) : $name;
+
+        $currentVersion = (int) ($bv->version ?? 0);
+        if ($latestPublishedVersionForBlueprint && $currentVersion < $latestPublishedVersionForBlueprint) {
+            $label .= ' (deprecated)';
+        }
+
+        return $label;
+    }
 }
