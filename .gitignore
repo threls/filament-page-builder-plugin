@@ -11,14 +11,3 @@ phpunit.xml
 phpstan.neon
 testbench.yaml
 vendor
-
-# Playground (example app)
-playground/.env
-playground/vendor
-playground/node_modules
-playground/storage
-playground/bootstrap/cache
-playground/public/build
-playground/public/storage
-
-/playground
