@@ -82,21 +82,104 @@ class MenuItem extends Model implements HasMedia, TranslatableContract
     {
         $locale = $locale ?? app()->getLocale();
 
-        switch ($this->type) {
-            case 'page':
-                if ($this->page) {
-                    $slug = $this->page->translate($locale)->slug ?? '';
-
-                    return $slug ? "/{$slug}" : null;
-                }
-
-                return null;
-            case 'internal':
-            case 'external':
-                return $this->translate($locale)->url ?? null;
-            default:
-                return null;
+        $translationUrl = $this->translations->first()?->url ?? $this->translate($locale)?->url;
+        if (!empty($translationUrl)) {
+            return $translationUrl;
         }
+
+        if ($this->type === 'page' && $this->page) {
+            return $this->buildHierarchicalPagePath($locale);
+        }
+
+        return null;
+    }
+
+    public function buildHierarchicalPagePath(?string $locale = null): ?string
+    {
+        $locale = $locale ?? app()->getLocale();
+
+        if (!$this->page) {
+            return null;
+        }
+
+        $pageSlug = $this->page->slug ?? '';
+        if (!$pageSlug) {
+            return null;
+        }
+
+        $pathSegments = [];
+        $currentItem = $this->parent;
+
+        while ($currentItem) {
+            $parentTranslation = $currentItem->translate($locale);
+            if ($parentTranslation && $parentTranslation->name) {
+                $parentSlug = $this->nameToSlug($parentTranslation->name);
+                array_unshift($pathSegments, $parentSlug);
+            }
+            $currentItem = $currentItem->parent;
+        }
+
+        $pathSegments[] = $pageSlug;
+
+        return '/' . implode('/', $pathSegments);
+    }
+
+    private function nameToSlug(string $name): string
+    {
+        return strtolower(trim(preg_replace('/[^A-Za-z0-9-]+/', '-', $name), '-'));
+    }
+
+    public function isCmsPage(): bool
+    {
+        return $this->type === 'page' && $this->page_id !== null;
+    }
+
+    public function getPageSlug(): ?string
+    {
+        if (!$this->isCmsPage() || !$this->page) {
+            return null;
+        }
+
+        return $this->page->slug ?? null;
+    }
+
+    public function getSlug(?string $locale = null): ?string
+    {
+        $locale = $locale ?? app()->getLocale();
+
+        if ($this->isCmsPage() && $this->page) {
+            return $this->page->slug ?? null;
+        }
+
+        $translation = $this->translate($locale);
+        if ($translation && $translation->name) {
+            return $this->nameToSlug($translation->name);
+        }
+
+        return null;
+    }
+
+    public function getHierarchicalPath(?string $locale = null): ?string
+    {
+        $locale = $locale ?? app()->getLocale();
+
+        if ($this->isCmsPage() && $this->page) {
+            return $this->buildHierarchicalPagePath($locale);
+        }
+
+        $pathSegments = [];
+        $currentItem = $this;
+
+        while ($currentItem) {
+            $translation = $currentItem->translate($locale);
+            if ($translation && $translation->name) {
+                $slug = $this->nameToSlug($translation->name);
+                array_unshift($pathSegments, $slug);
+            }
+            $currentItem = $currentItem->parent;
+        }
+
+        return empty($pathSegments) ? null : '/' . implode('/', $pathSegments);
     }
 
     public function registerMediaCollections(): void
@@ -138,7 +221,7 @@ class MenuItem extends Model implements HasMedia, TranslatableContract
 
     public function getNameAttribute(): ?string
     {
-        return $this->translations->first()?->name ?? $this->translate()?->name;
+        return $this->translate()?->name;
     }
 
     protected static function booted(): void
