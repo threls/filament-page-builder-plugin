@@ -7,13 +7,8 @@ use Astrotomic\Translatable\Translatable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Support\Facades\Storage;
-use Spatie\MediaLibrary\HasMedia;
-use Spatie\MediaLibrary\InteractsWithMedia;
-
-class MenuItem extends Model implements HasMedia, TranslatableContract
+class MenuItem extends Model implements TranslatableContract
 {
-    use InteractsWithMedia;
     use Translatable;
 
     protected $fillable = [
@@ -182,42 +177,7 @@ class MenuItem extends Model implements HasMedia, TranslatableContract
         return empty($pathSegments) ? null : '/' . implode('/', $pathSegments);
     }
 
-    public function registerMediaCollections(): void
-    {
-        $this->addMediaCollection('icon')
-            ->singleFile()
-            ->acceptsMimeTypes(['image/jpeg', 'image/png', 'image/gif', 'image/webp']);
-    }
 
-    public function getIconUrl(): ?string
-    {
-        if ($this->icon) {
-            return Storage::disk('public')->url($this->icon);
-        }
-
-        $media = $this->getFirstMedia('icon');
-
-        return $media ? $media->getUrl() : null;
-    }
-
-    public function getIconUrlAttribute(): ?string
-    {
-        return $this->getIconUrl();
-    }
-
-    public function getIconAltUrl(): ?string
-    {
-        if ($this->icon_alt) {
-            return Storage::disk('public')->url($this->icon_alt);
-        }
-
-        return null;
-    }
-
-    public function getIconAltUrlAttribute(): ?string
-    {
-        return $this->getIconAltUrl();
-    }
 
     public function getNameAttribute(): ?string
     {

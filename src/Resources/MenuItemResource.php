@@ -128,8 +128,8 @@ class MenuItemResource extends Resource
                                 ->imageCropAspectRatio('1:1')
                                 ->imageResizeTargetWidth('64')
                                 ->imageResizeTargetHeight('64')
-                                ->disk('public')
-                                ->directory('menu-icons'),
+                                ->disk(config('filament-page-builder.disk'))
+                                ->directory('page-builder'),
 
                             Forms\Components\FileUpload::make('icon_alt')
                                 ->label('Alternative Icon (Hover/Active)')
@@ -139,8 +139,8 @@ class MenuItemResource extends Resource
                                 ->imageCropAspectRatio('1:1')
                                 ->imageResizeTargetWidth('64')
                                 ->imageResizeTargetHeight('64')
-                                ->disk('public')
-                                ->directory('menu-icons'),
+                                ->disk(config('filament-page-builder.disk'))
+                                ->directory('page-builder'),
                         ])
                         ->columnSpan('full'),
                 ])
@@ -190,11 +190,10 @@ class MenuItemResource extends Resource
 
                 Tables\Columns\ImageColumn::make('icon')
                     ->label('Icon')
-                    ->disk('public')
-                    ->width(30)
-                    ->height(30)
-                    ->circular()
-                    ->width(60),
+                    ->disk(config('filament-page-builder.disk'))
+                    ->width(60)
+                    ->height(60)
+                    ->circular(),
 
                 Tables\Columns\TextColumn::make('name')
                     ->label('Name')
