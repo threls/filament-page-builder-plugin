@@ -124,10 +124,6 @@ class MenuItemResource extends Resource
                                 ->label('Icon')
                                 ->image()
                                 ->maxSize(1024)
-                                ->imageResizeMode('cover')
-                                ->imageCropAspectRatio('1:1')
-                                ->imageResizeTargetWidth('64')
-                                ->imageResizeTargetHeight('64')
                                 ->disk(config('filament-page-builder.disk'))
                                 ->directory('page-builder'),
 
@@ -135,10 +131,6 @@ class MenuItemResource extends Resource
                                 ->label('Alternative Icon (Hover/Active)')
                                 ->image()
                                 ->maxSize(1024)
-                                ->imageResizeMode('cover')
-                                ->imageCropAspectRatio('1:1')
-                                ->imageResizeTargetWidth('64')
-                                ->imageResizeTargetHeight('64')
                                 ->disk(config('filament-page-builder.disk'))
                                 ->directory('page-builder'),
                         ])
