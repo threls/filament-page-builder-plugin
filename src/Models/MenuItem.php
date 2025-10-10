@@ -129,18 +129,11 @@ class MenuItem extends Model implements TranslatableContract
         return $this->type === 'page' && $this->page_id !== null;
     }
 
-    public function getPageSlug(): ?string
-    {
-        if (!$this->isCmsPage() || !$this->page) {
-            return null;
-        }
 
-        return $this->page->slug ?? null;
-    }
-
-    public function getSlug(?string $locale = null): ?string
+    public function getSlug(): ?string
     {
-        $locale = $locale ?? app()->getLocale();
+        /* slugs for internal pages will always be returned in English */
+        $locale = app()->getLocale();
 
         if ($this->isCmsPage() && $this->page) {
             return $this->page->slug ?? null;
