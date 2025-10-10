@@ -2,6 +2,14 @@
 
 All notable changes to `filament-page-builder` will be documented in this file.
 
+## v3.1.1-beta - 2025-10-10
+
+### What's Changed
+
+* fix slugs for internal pages by @sabina1997 in https://github.com/threls/filament-page-builder-plugin/pull/13
+
+**Full Changelog**: https://github.com/threls/filament-page-builder-plugin/compare/v3.1.0-beta...v3.1.1-beta
+
 ## v3.1.0-beta - 2025-10-10
 
 ### What's Changed
