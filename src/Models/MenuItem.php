@@ -65,14 +65,6 @@ class MenuItem extends Model implements TranslatableContract
         return $depth;
     }
 
-    public function canHaveChildren(): bool
-    {
-        $currentDepth = $this->getDepth();
-        $maxDepth = $this->menu->max_depth ?? 3;
-
-        return $currentDepth < ($maxDepth - 1);
-    }
-
     public function getUrl(?string $locale = null): ?string
     {
         $locale = $locale ?? app()->getLocale();
@@ -83,15 +75,15 @@ class MenuItem extends Model implements TranslatableContract
         }
 
         if ($this->type === 'page' && $this->page) {
-            return $this->buildHierarchicalPagePath($locale);
+            return $this->buildHierarchicalPagePath();
         }
 
         return null;
     }
 
-    public function buildHierarchicalPagePath(?string $locale = null): ?string
+    public function buildHierarchicalPagePath(): ?string
     {
-        $locale = $locale ?? app()->getLocale();
+        $locale = app()->getFallbackLocale();
 
         if (!$this->page) {
             return null;
@@ -133,7 +125,7 @@ class MenuItem extends Model implements TranslatableContract
     public function getSlug(): ?string
     {
         /* slugs for internal pages will always be returned in English */
-        $locale = app()->getLocale();
+        $locale = app()->getFallbackLocale();
 
         if ($this->isCmsPage() && $this->page) {
             return $this->page->slug ?? null;
@@ -147,9 +139,9 @@ class MenuItem extends Model implements TranslatableContract
         return null;
     }
 
-    public function getHierarchicalPath(?string $locale = null): ?string
+    public function getHierarchicalPath(): ?string
     {
-        $locale = $locale ?? app()->getLocale();
+        $locale = app()->getFallbackLocale();
 
         if ($this->isCmsPage() && $this->page) {
             return $this->buildHierarchicalPagePath($locale);
