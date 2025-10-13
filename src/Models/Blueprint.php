@@ -35,7 +35,7 @@ class Blueprint extends Model
     public function publishNewVersion(): ?int
     {
         $schema = $this->working_schema ?? [];
-        if (! is_array($schema) || empty($schema)) {
+        if (! is_array($schema)) {
             return null;
         }
 

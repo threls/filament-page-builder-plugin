@@ -157,7 +157,9 @@ class MenuItemResource extends Resource
 
                                             Forms\Components\TextInput::make("{$locale}.url")
                                                 ->label('URL')
-                                                ->maxLength(500),
+                                                ->maxLength(500)
+                                                ->visible(fn (Get $get): bool => !in_array($get('type'), ['page', 'parent']))
+                                                ->required(fn (Get $get): bool => in_array($get('type'), ['internal', 'external'])),
                                         ]);
                                 })
                                 ->toArray()
