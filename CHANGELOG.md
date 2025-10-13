@@ -2,6 +2,10 @@
 
 All notable changes to `filament-page-builder` will be documented in this file.
 
+## v3.1.2-beta - 2025-10-13
+
+**Full Changelog**: https://github.com/threls/filament-page-builder-plugin/compare/v3.1.1-beta...v3.1.2-beta
+
 ## v3.1.1-beta - 2025-10-10
 
 ### What's Changed
